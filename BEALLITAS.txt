@@ -1,0 +1,21 @@
+FUTÓALKALMAZÁS V15 – ÜZEMBE HELYEZÉS
+
+1. Supabase: nyisd meg a meglévő projekt SQL Editorát és futtasd a supabase_setup.sql fájlt.
+   Ha már létrehoztad a training_plans táblát és a policy-ket, ne futtasd újra a policy létrehozásokat.
+2. Netlify: Site configuration / Environment variables:
+   OPENAI_API_KEY = saját OpenAI API-kulcs (titkos, ne tedd a HTML-be!)
+   SUPABASE_ANON_KEY = a meglévő Supabase projekt publikus anon kulcsa
+   SUPABASE_URL = https://dlqinyhxpemzdrgwqsxk.supabase.co (opcionális)
+   OPENAI_MODEL = gpt-4.1-mini (opcionális)
+3. A ZIP tartalmát deployold Netlify-ra. A netlify/functions könyvtárnak is része kell legyen a deploynak.
+   FONTOS: a Netlify kézi drag-and-drop statikus feltöltés nem minden esetben buildeli a függvényeket.
+   A megbízható út Git-repozitóriumból történő Netlify build/deploy, vagy Netlify CLI.
+4. Jelentkezz be az appba, állítsd be a saját tervet, kattints AI-tervjavaslat, majd Felhőmentés.
+5. A saját tervet a 'Saját terv megjelenítése' gombbal nézheted meg. A korábbi terv megmarad.
+
+KORLÁTOK
+- AI-kulcs és Supabase SQL nélkül az AI és a felhőmentés nem működik.
+- A saját terv szerkesztése automatikusan helyben mentődik; a felhőbe a Felhőmentés gombbal kerül.
+- A saját terv futásnaplója is a saját terv JSON-adatában tárolódik; felhőbe kézi mentéssel kerül.
+- A régi edzésnapló külön marad; a régi statisztikai grafikonok még a korábbi 4 hetes naplóhoz kötődnek.
+- Az AI-javaslatot futás előtt ellenőrizni kell, különösen a terhelést és a regenerációt.
