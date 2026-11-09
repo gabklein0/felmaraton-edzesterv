@@ -106,8 +106,9 @@
     "Céltempó (perc/km) · tól–ig": "Allure cible (min/km) · de–à",
     "Edzés részletei": "Détails de la séance",
     "Edzés törlése": "Supprimer la séance",
-    "Fiókbeállítások": "Paramètres du compte",
-    "Korábban mentett saját terv betöltve.": "Plan personnalisé précédemment enregistré chargé."
+    "Progresszív": "Progressive",
+    "Haladó": "Avancée",
+    "Pro": "Pro"
   },
   "principles": [
     "Course facile : allure confortable permettant de parler et favorisant la récupération.",
