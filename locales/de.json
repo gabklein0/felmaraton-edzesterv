@@ -101,7 +101,13 @@
     "Állítsd össze a saját programodat, vagy készíts egy személyre szabott kezdőtervet, amelynek minden edzése módosítható. A saját terv hetei automatikusan megjelennek az edzésterv nézetben.": "Erstelle dein eigenes Programm oder einen personalisierten Startplan. Jede Einheit ist bearbeitbar; der Plan erscheint automatisch in deiner Trainingsansicht.",
     "A korábbi felhőadatok megmaradnak. A helyi pipák internet nélkül is tárolódnak.": "Bisherige Cloud-Daten bleiben erhalten. Lokale Abschlüsse werden auch offline gespeichert.",
     "Felhőalapú mentés": "Cloud-Speicherung",
-    "Alkalmazás navigáció": "App-Navigation"
+    "Alkalmazás navigáció": "App-Navigation",
+    "Táv (km)": "Distanz (km)",
+    "Céltempó (perc/km) · tól–ig": "Zieltempo (Min./km) · von–bis",
+    "Edzés részletei": "Trainingsdetails",
+    "Edzés törlése": "Training löschen",
+    "Fiókbeállítások": "Kontoeinstellungen",
+    "Korábban mentett saját terv betöltve.": "Zuvor gespeicherter eigener Trainingsplan geladen."
   },
   "principles": [
     "Lockerer Lauf: angenehmes Gesprächstempo, das die Regeneration unterstützt.",
