@@ -102,7 +102,12 @@
     "Összes lefutott táv": "Összes lefutott táv",
     "Összesített átlagtempó": "Összesített átlagtempó",
     "Új edzésterv készítése AI-val": "Új edzésterv készítése AI-val",
-    "Új saját edzés": "Új saját edzés"
+    "Új saját edzés": "Új saját edzés",
+    "Táv (km)": "Táv (km)",
+    "Céltempó (perc/km) · tól–ig": "Céltempó (perc/km) · tól–ig",
+    "Edzés részletei": "Edzés részletei",
+    "Edzés törlése": "Edzés törlése",
+    "Korábban mentett saját terv betöltve.": "Korábban mentett saját terv betöltve."
   },
   "principles": []
 }
