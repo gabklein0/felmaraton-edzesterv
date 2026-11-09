@@ -106,8 +106,9 @@
     "Céltempó (perc/km) · tól–ig": "Zieltempo (Min./km) · von–bis",
     "Edzés részletei": "Trainingsdetails",
     "Edzés törlése": "Training löschen",
-    "Fiókbeállítások": "Kontoeinstellungen",
-    "Korábban mentett saját terv betöltve.": "Zuvor gespeicherter eigener Trainingsplan geladen."
+    "Progresszív": "Progressiv",
+    "Haladó": "Fortgeschritten",
+    "Pro": "Pro"
   },
   "principles": [
     "Lockerer Lauf: angenehmes Gesprächstempo, das die Regeneration unterstützt.",
