@@ -107,7 +107,9 @@
     "Céltempó (perc/km) · tól–ig": "Target pace (min/km) · from–to",
     "Edzés részletei": "Workout details",
     "Edzés törlése": "Delete workout",
-    "Korábban mentett saját terv betöltve.": "Previously saved custom plan loaded."
+    "Progresszív": "Progressive",
+    "Haladó": "Advanced",
+    "Pro": "Pro"
   },
   "principles": [
     "Easy run: conversational, comfortable pace that supports recovery.",
