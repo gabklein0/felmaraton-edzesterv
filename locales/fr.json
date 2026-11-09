@@ -101,7 +101,13 @@
     "Állítsd össze a saját programodat, vagy készíts egy személyre szabott kezdőtervet, amelynek minden edzése módosítható. A saját terv hetei automatikusan megjelennek az edzésterv nézetben.": "Créez votre programme ou générez un plan personnalisé. Chaque séance est modifiable et le plan apparaît automatiquement dans votre espace d’entraînement.",
     "A korábbi felhőadatok megmaradnak. A helyi pipák internet nélkül is tárolódnak.": "Les données cloud précédentes sont conservées. Les séances terminées sont aussi enregistrées hors ligne.",
     "Felhőalapú mentés": "Stockage cloud",
-    "Alkalmazás navigáció": "Navigation de l’application"
+    "Alkalmazás navigáció": "Navigation de l’application",
+    "Táv (km)": "Distance (km)",
+    "Céltempó (perc/km) · tól–ig": "Allure cible (min/km) · de–à",
+    "Edzés részletei": "Détails de la séance",
+    "Edzés törlése": "Supprimer la séance",
+    "Fiókbeállítások": "Paramètres du compte",
+    "Korábban mentett saját terv betöltve.": "Plan personnalisé précédemment enregistré chargé."
   },
   "principles": [
     "Course facile : allure confortable permettant de parler et favorisant la récupération.",
