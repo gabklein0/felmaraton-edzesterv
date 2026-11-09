@@ -171,7 +171,6 @@ function persist(){try{localStorage.setItem(key,JSON.stringify({meta:getMeta(),e
 function render(){
  const root=$('plRows');
  const openWeeks=new Set([...root.querySelectorAll('details.planner-week-group[open]')].map(x=>x.dataset.week));
- const firstRender=!root.querySelector('details.planner-week-group');
  root.replaceChildren();
  entries.sort((a,b)=>a.date.localeCompare(b.date));
  const groups=new Map();
@@ -182,7 +181,7 @@ function render(){
  });
  for(const [week,items] of groups){
   const group=document.createElement('details');group.className='planner-week-group';group.dataset.week=String(week);
-  group.open=firstRender||openWeeks.has(String(week));
+  group.open=openWeeks.has(String(week));
   const heading=document.createElement('summary');heading.textContent=`${week}. hét · ${items.length} edzés`;group.append(heading);
   for(const {e,i} of items){
    const el=document.createElement('div');el.className='planner-row';
