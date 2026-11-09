@@ -102,7 +102,12 @@
     "Állítsd össze a saját programodat, vagy készíts egy személyre szabott kezdőtervet, amelynek minden edzése módosítható. A saját terv hetei automatikusan megjelennek az edzésterv nézetben.": "Build your own programme or generate a personalized starting plan. Every workout can be edited, and the plan appears automatically in your training view.",
     "A korábbi felhőadatok megmaradnak. A helyi pipák internet nélkül is tárolódnak.": "Previous cloud data is preserved. Local completions are stored even without internet.",
     "Felhőalapú mentés": "Cloud storage",
-    "Alkalmazás navigáció": "Application navigation"
+    "Alkalmazás navigáció": "Application navigation",
+    "Táv (km)": "Distance (km)",
+    "Céltempó (perc/km) · tól–ig": "Target pace (min/km) · from–to",
+    "Edzés részletei": "Workout details",
+    "Edzés törlése": "Delete workout",
+    "Korábban mentett saját terv betöltve.": "Previously saved custom plan loaded."
   },
   "principles": [
     "Easy run: conversational, comfortable pace that supports recovery.",
