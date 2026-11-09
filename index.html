@@ -240,8 +240,7 @@ async function cloudList(preferred=''){
   if(previous&&records.some(r=>r.plan_key===previous))picker.value=previous;
   else if(records.some(r=>r.plan_key===PLAN_CURRENT))picker.value=PLAN_CURRENT;
   if(!records.length){const opt=document.createElement('option');opt.value='';opt.textContent='Nincs felhőben mentett terv';picker.append(opt)}
-  info.textContent=records.length+' mentett edzésterv található a Supabase-ben.';
-  status(info.textContent);
+  info.textContent='';
  }catch(e){
   info.textContent='Nem sikerült frissíteni: '+(e?.message||String(e));
   status(info.textContent);
