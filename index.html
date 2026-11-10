@@ -638,13 +638,13 @@ async function cloudList(preferred=''){
  }finally{btn.disabled=false;btn.textContent='Lista frissítése'}
 }
 function scheduleCloudAutoSave(){
- if(!loadedCloudPlanKey||cloudMutationBusy)return;
+ if(!loadedCloudPlanKey||cloudMutationBusy||unsavedAiDraft)return;
  cloudAutoRevision++;
  clearTimeout(cloudAutoTimer);
  cloudAutoTimer=setTimeout(()=>{cloudAutoTimer=null;cloudAutoPromise=cloudAutoPromise.then(()=>saveLoadedPlan()).catch(e=>status('Automatikus felhőmentési hiba: '+e.message));},650);
 }
 async function saveLoadedPlan(){
- if(!loadedCloudPlanKey||cloudMutationBusy)return;
+ if(!loadedCloudPlanKey||cloudMutationBusy||unsavedAiDraft)return;
  const planKey=loadedCloudPlanKey;
  const revision=cloudAutoRevision;
  const payload={meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText};
@@ -673,6 +673,7 @@ async function cloudSave(){
   if(!data?.length)throw Error('A felhőterv nem létezik, ezért nem hoztunk létre helyette újat.');
   rememberLastPlan(session.user.id,planKey);
   customMode=true;renderCustom();
+  unsavedAiDraft=false;
   await cloudList(planKey);
   status('A meglévő edzésterv frissítve a felhőben.');
  }catch(e){status('Felhőmentési hiba: '+e.message)}
@@ -681,7 +682,7 @@ $('plNew').addEventListener('click',async()=>{
  if(!confirm('Új, üres edzéstervet kezdesz. A jelenlegi terv mentetlen helyi változtatásai elveszhetnek. Folytatod?'))return;
  try{
   await finishCloudAutoSave();stopCloudAutosave();loadedCloudPlanKey=null;
-  entries=[];principlesText='';
+  entries=[];principlesText='';unsavedAiDraft=true;
    clearPlanMetadata();
   render();persist();showNoPlanState();
   status('Új edzésterv megnyitva. Új felhőrekord csak az „Új terv mentése a felhőbe” gombbal készül.');
@@ -697,7 +698,7 @@ $('plCreateCloud').addEventListener('click',async()=>{
   const planKey='plan-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   const {error}=await client.from('training_plans').insert({user_id:session.user.id,plan_key:planKey,payload:{meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText}});
   if(error)throw error;
-  loadedCloudPlanKey=planKey;rememberLastPlan(session.user.id,planKey);
+  loadedCloudPlanKey=planKey;unsavedAiDraft=false;rememberLastPlan(session.user.id,planKey);
   customMode=true;activeCustomWeek=0;renderCustom();
   await cloudList(planKey);status('Új edzésterv létrehozva és mentve a felhőben.');
  }catch(e){status('Új terv mentése sikertelen: '+e.message)}finally{btn.disabled=false}
@@ -735,7 +736,7 @@ async function loadCloudPlanByKey(planKey,{automatic=false}={}){
   // Disable autosave while replacing the active plan, to avoid overwriting another plan.
   clearTimeout(cloudAutoTimer);cloudAutoTimer=null;
   loadedCloudPlanKey=null;
-  entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');
+  unsavedAiDraft=false;entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');
   render();persist();loadedCloudPlanKey=planKey;
   customMode=true;activeCustomWeek=0;renderCustom();
   $('plPlanSelect').value=planKey;
@@ -820,6 +821,8 @@ document.addEventListener('running-auth-ready',()=>{void restoreLastPlanOnLogin(
 
 // Keep an already-open session synchronized with the authoritative cloud plans.
 // Polling works without enabling Supabase Realtime replication for training_plans.
+let unsavedAiDraft=false;
+let aiGenerationBusy=false;
 let cloudSyncRunning=false;
 let cloudSyncLastSnapshot=null;
 let cloudSyncUser=null;
@@ -827,7 +830,7 @@ function cloudSyncEditorBusy(){
  const active=document.activeElement;
  const editing=active&&(['INPUT','TEXTAREA','SELECT'].includes(active.tagName)||active.isContentEditable)&&
    (active.closest('#customPlanner')||active.closest('#personalPlanner')||active.closest('[id^="pl"]'));
- return !!(cloudMutationBusy||cloudAutoTimer||editing);
+ return !!(unsavedAiDraft||aiGenerationBusy||cloudMutationBusy||cloudAutoTimer||editing);
 }
 async function syncPlansFromServer(){
  if(cloudSyncRunning||document.hidden||cloudSyncEditorBusy()||lastAutoLoadUser===null)return;
@@ -872,7 +875,7 @@ document.addEventListener('running-auth-ready',()=>{cloudSyncLastSnapshot=null;c
 document.getElementById('cloudLogout')?.addEventListener('click',()=>{cloudSyncLastSnapshot=null;cloudSyncUser=null});
 
 document.getElementById('cloudLogout')?.addEventListener('click',()=>{lastAutoLoadUser=null});
-async function requestAI(){if(entries.length&&!confirm((window.appTranslate?.('Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')||'Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')))return;const btn=$('plSuggest');btn.disabled=true;status('AI-tervjavaslat készül…');try{const {session}=await getCloudClient();const resp=await fetch('/.netlify/functions/training-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({meta:getMeta(),language:window.trainingLanguage||'hu'})});const result=await resp.json();if(!resp.ok)throw Error(result.error||'AI-hiba');if(!Array.isArray(result.entries)||!result.entries.length)throw Error('Az AI nem adott vissza érvényes edzéstervet.');const m=getMeta();const min=m.start,max=datePlus(m.start,m.weeks*7-1);const clean=result.entries.slice(0,Math.min(250,m.weeks*7)).map(e=>({date:String(e.date||''),name:String(e.name||'').slice(0,90),type:['easy','tempo','long','race','rest'].includes(e.type)?e.type:'easy',km:Number(e.km),pace:String(e.pace||'').slice(0,20),details:String(e.details||'').slice(0,2000)}));if(clean.some(e=>!iso(e.date)||e.date<min||e.date>max||!Number.isFinite(e.km)||e.km<0||e.km>45))throw Error('Az AI tervében hibás dátum vagy táv található.');entries=clean;principlesText=String(result.principles||'').slice(0,5000);render();persist();activateCustom();status('AI-tervjavaslat elkészült. Ellenőrizd, majd mentsd a felhőbe.')}catch(e){status('AI-javaslat nem sikerült: '+e.message+' A meglévő terv nem változott.')}finally{btn.disabled=false}}
+async function requestAI(){if(entries.length&&!confirm((window.appTranslate?.('Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')||'Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')))return;const btn=$('plSuggest');btn.disabled=true;aiGenerationBusy=true;status('AI-tervjavaslat készül…');try{const {session}=await getCloudClient();const resp=await fetch('/.netlify/functions/training-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({meta:getMeta(),language:window.trainingLanguage||'hu'})});const result=await resp.json();if(!resp.ok)throw Error(result.error||'AI-hiba');if(!Array.isArray(result.entries)||!result.entries.length)throw Error('Az AI nem adott vissza érvényes edzéstervet.');const m=getMeta();const min=m.start,max=datePlus(m.start,m.weeks*7-1);const clean=result.entries.slice(0,Math.min(250,m.weeks*7)).map(e=>({date:String(e.date||''),name:String(e.name||'').slice(0,90),type:['easy','tempo','long','race','rest'].includes(e.type)?e.type:'easy',km:Number(e.km),pace:String(e.pace||'').slice(0,20),details:String(e.details||'').slice(0,2000)}));if(clean.some(e=>!iso(e.date)||e.date<min||e.date>max||!Number.isFinite(e.km)||e.km<0||e.km>45))throw Error('Az AI tervében hibás dátum vagy táv található.');unsavedAiDraft=true;stopCloudAutosave();entries=clean;principlesText=String(result.principles||'').slice(0,5000);render();persist();activateCustom();status('AI-tervjavaslat elkészült. Ellenőrizd, majd mentsd a felhőbe.')}catch(e){status('AI-javaslat nem sikerült: '+e.message+' A meglévő terv nem változott.')}finally{aiGenerationBusy=false;btn.disabled=false}}
 })();
 </script><style>.plan-picker{min-width:210px;max-width:340px}.planner-actions .plan-picker{margin:4px 8px 4px 0}.planner-actions .plan-picker select{margin-top:5px}</style><script id="app-i18n">(()=>{'use strict';
 const select=document.getElementById('appLanguage');
