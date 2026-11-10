@@ -346,6 +346,13 @@ const publicKey=document.querySelector('meta[name="supabase-anon-key"]')?.conten
 async function getCloudClient(){const client=window.runningAppSupabase;if(!client)throw Error('A bejelentkezés még inicializálódik. Próbáld újra néhány másodperc múlva.');const {data:{session},error}=await client.auth.getSession();if(error)throw error;if(!session)throw Error('Jelentkezz be a fenti fiókodba, majd próbáld újra.');return {client,session}}
 const PLAN_CURRENT='current';
 const LEGACY_PLAN_KEY='legacy-halfmarathon-2026-12-06';
+// Remember only the last plan identifier, scoped to the signed-in account.
+// The actual training data continues to live in Supabase.
+const lastPlanStorageKey=uid=>'last-plan-for-user:'+uid;
+let lastAutoLoadUser=null;
+function rememberLastPlan(uid,planKey){if(uid&&planKey)try{localStorage.setItem(lastPlanStorageKey(uid),planKey)}catch(_){}}
+function lastPlanFor(uid){try{return localStorage.getItem(lastPlanStorageKey(uid))||''}catch(_){return ''}}
+
 function legacyPayload(){
  const legacy=window.legacyTrainingWeeks||[];
  if(legacy.length!==4)return null;
@@ -381,6 +388,7 @@ async function cloudList(preferred=''){
    opt.textContent=(rec.payload?.meta?.name||rec.plan_key)+' · '+(rec.payload?.meta?.weeks||'?')+' hét';picker.append(opt);
   }
   if(previous&&records.some(r=>r.plan_key===previous))picker.value=previous;
+  else if(records.some(r=>r.plan_key===lastPlanFor(session.user.id)))picker.value=lastPlanFor(session.user.id);
   else if(records.some(r=>r.plan_key===PLAN_CURRENT))picker.value=PLAN_CURRENT;
   if(!records.length){const opt=document.createElement('option');opt.value='';opt.textContent='Nincs felhőben mentett terv';picker.append(opt)}
   info.textContent='';
@@ -421,24 +429,54 @@ async function cloudSave(){
   const {error}=await client.from('training_plans').upsert({user_id:session.user.id,plan_key:planKey,payload:{meta:getMeta(),entries,principlesText},updated_at:new Date().toISOString()},{onConflict:'user_id,plan_key'});
   if(error)throw error;
   loadedCloudPlanKey=planKey;
+  rememberLastPlan(session.user.id,planKey);
   await cloudList(planKey);
   status('A kiválasztott terv és a hozzá tartozó teljesítések mentve a Supabase-be.');
  }catch(e){status('Felhőmentési hiba: '+e.message)}
 }
-async function cloudLoad(){
+async function loadCloudPlanByKey(planKey,{automatic=false}={}){
+ if(!planKey)return false;
  try{
-  await finishCloudAutoSave();
-  const planKey=$('plPlanSelect').value;
-  if(!planKey){status('Előbb válassz egy mentett tervet.');return}
+  if(!automatic)await finishCloudAutoSave();
   const {client,session}=await getCloudClient();
   const {data,error}=await client.from('training_plans').select('payload').eq('user_id',session.user.id).eq('plan_key',planKey).maybeSingle();
   if(error)throw error;
-  if(!data){status('A kiválasztott terv nem található a felhőben.');return}
-  if(entries.length&&!confirm((window.appTranslate?.('A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')||'A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')))return;
+  if(!data){if(!automatic)status('A kiválasztott terv nem található a felhőben.');return false}
+  if(!automatic&&entries.length&&!confirm((window.appTranslate?.('A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')||'A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')))return false;
   const payload=data.payload;if(!payload||!Array.isArray(payload.entries))throw Error('Hibás felhőadat');
   for(const [field,id] of Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'}))if(payload.meta?.[field]!=null)$(id).value=String(payload.meta[field]);
-  loadedCloudPlanKey=null;entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');render();persist();loadedCloudPlanKey=planKey;activateCustom();status('„'+(payload.meta?.name||planKey)+'” betöltve a felhőből.');void window.translateCurrentPlan?.();
- }catch(e){status('Felhőbetöltési hiba: '+e.message)}
+  // Disable autosave while replacing the active plan, to avoid overwriting another plan.
+  clearTimeout(cloudAutoTimer);cloudAutoTimer=null;
+  loadedCloudPlanKey=null;
+  entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');
+  render();persist();loadedCloudPlanKey=planKey;
+  customMode=true;activeCustomWeek=0;renderCustom();
+  $('plPlanSelect').value=planKey;
+  rememberLastPlan(session.user.id,planKey);
+  status('„'+(payload.meta?.name||planKey)+'” betöltve a felhőből.');
+  return true;
+ }catch(e){status('Felhőbetöltési hiba: '+e.message);return false}
+}
+async function cloudLoad(){
+ const planKey=$('plPlanSelect').value;
+ if(!planKey){status('Előbb válassz egy mentett tervet.');return}
+ const loaded=await loadCloudPlanByKey(planKey);
+ if(loaded){document.getElementById('goTraining')?.click()}
+}
+async function restoreLastPlanOnLogin(){
+ try{
+  const {session}=await getCloudClient();
+  const uid=session.user.id;
+  if(lastAutoLoadUser===uid)return;
+  lastAutoLoadUser=uid;
+  await cloudList();
+  const savedKey=lastPlanFor(uid);
+  const picker=$('plPlanSelect');
+  // Never automatically switch to a different plan if the last one no longer exists.
+  if(savedKey&&[...picker.options].some(o=>o.value===savedKey)){
+   await loadCloudPlanByKey(savedKey,{automatic:true});
+  }
+ }catch(e){status('A legutóbbi edzésterv automatikus betöltése nem sikerült: '+e.message)}
 }
 // Csak a ténylegesen betöltött felhőterv teljesítési és naplóadatait töröljük.
 // Capture fázis: megakadályozza a korábbi, minden workouts sort törlő kezelő futását.
@@ -469,7 +507,8 @@ $('reset').addEventListener('click',async event=>{
 $('plCloudSave').addEventListener('click',()=>void cloudSave());
 $('plCloudLoad').addEventListener('click',()=>void cloudLoad());
 $('plCloudRefresh').addEventListener('click',()=>void cloudList());
-document.addEventListener('running-auth-ready',()=>{void cloudList()});
+document.addEventListener('running-auth-ready',()=>{void restoreLastPlanOnLogin()});
+document.getElementById('cloudLogout')?.addEventListener('click',()=>{lastAutoLoadUser=null});
 async function requestAI(){if(entries.length&&!confirm((window.appTranslate?.('Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')||'Az AI-javaslat felülírja a jelenlegi saját tervet. Folytatod?')))return;const btn=$('plSuggest');btn.disabled=true;status('AI-tervjavaslat készül…');try{const {session}=await getCloudClient();const resp=await fetch('/.netlify/functions/training-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({meta:getMeta(),language:window.trainingLanguage||'hu'})});const result=await resp.json();if(!resp.ok)throw Error(result.error||'AI-hiba');if(!Array.isArray(result.entries)||!result.entries.length)throw Error('Az AI nem adott vissza érvényes edzéstervet.');const m=getMeta();const min=m.start,max=datePlus(m.start,m.weeks*7-1);const clean=result.entries.slice(0,Math.min(250,m.weeks*7)).map(e=>({date:String(e.date||''),name:String(e.name||'').slice(0,90),type:['easy','tempo','long','race','rest'].includes(e.type)?e.type:'easy',km:Number(e.km),pace:String(e.pace||'').slice(0,20),details:String(e.details||'').slice(0,2000)}));if(clean.some(e=>!iso(e.date)||e.date<min||e.date>max||!Number.isFinite(e.km)||e.km<0||e.km>45))throw Error('Az AI tervében hibás dátum vagy táv található.');entries=clean;principlesText=String(result.principles||'').slice(0,5000);render();persist();activateCustom();status('AI-tervjavaslat elkészült. Ellenőrizd, majd mentsd a felhőbe.')}catch(e){status('AI-javaslat nem sikerült: '+e.message+' A meglévő terv nem változott.')}finally{btn.disabled=false}}
 })();
 </script><style>.plan-picker{min-width:210px;max-width:340px}.planner-actions .plan-picker{margin:4px 8px 4px 0}.planner-actions .plan-picker select{margin-top:5px}</style><script id="app-i18n">(()=>{'use strict';
