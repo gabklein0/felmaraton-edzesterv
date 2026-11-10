@@ -133,6 +133,49 @@ body.session-locked .wrap > :not(.cloud){display:none!important}
     overflow:hidden!important;
   }
 }
+</style><style id="ios-date-native-overflow-fix">
+/* iOS WebKit date controls can keep an intrinsic minimum width even in a CSS grid. */
+@media (max-width:760px) {
+  .planner .planner-grid > label:has(> #plStart),
+  #plRows .planner-row-fields > label:has(> input[data-f="date"]) {
+    display:flex!important;
+    flex-direction:column!important;
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  .planner #plStart[type="date"],
+  #plRows input[data-f="date"][type="date"] {
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    display:block!important;
+    flex:0 1 auto!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:10px 12px!important;
+    font-size:16px!important;
+    line-height:24px!important;
+    text-align:left!important;
+    overflow:hidden!important;
+  }
+  .planner #plStart[type="date"]::-webkit-date-and-time-value,
+  #plRows input[data-f="date"][type="date"]::-webkit-date-and-time-value {
+    min-width:0!important;
+    width:100%!important;
+    text-align:left!important;
+  }
+  .planner #plStart[type="date"]::-webkit-datetime-edit,
+  #plRows input[data-f="date"][type="date"]::-webkit-datetime-edit {
+    min-width:0!important;
+    max-width:100%!important;
+    padding:0!important;
+  }
+}
 </style></head><body class="session-locked"><div class="wrap"><div class="running-app-header" aria-label="Running App 4 Health"><span class="running-app-header-mark" aria-hidden="true">⌁</span><span>RUNNING APP BUDAPEST</span></div><section class="cloud" aria-label="Felhőalapú mentés"><p id="cloudStatus" role="status" hidden></p><div class="language-switch"><label for="appLanguage" data-i18n="language">Nyelv / Language</label><select id="appLanguage" aria-label="Language"><option value="hu">HU</option><option value="en">EN</option><option value="fr">FR</option><option value="de">DE</option></select><span hidden id="translationStatus" role="status"></span></div><div id="cloudLogin"><label for="cloudDisplayName">Név</label><input id="cloudDisplayName" type="text" autocomplete="name" maxlength="60"><label for="cloudEmail">E-mail-cím</label><input id="cloudEmail" type="email" autocomplete="email"><label for="cloudPassword">Jelszó</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="8"><button id="cloudSignIn">Bejelentkezés</button></div><div id="cloudLogged" hidden><details id="cloudAccount"><summary id="cloudUser">Bejelentkezve · Fiókbeállítások</summary><div class="account-actions"><label for="cloudEditName">Megjelenített név</label><input id="cloudEditName" type="text" autocomplete="name" maxlength="60" placeholder="Név"><button id="cloudSaveName" class="subtle">Név mentése</button><details class="password-settings"><summary>Jelszó módosítása</summary><div class="password-settings-body"><label for="cloudNewPassword">Jelszó beállítása / módosítása a jelenlegi fiókhoz</label><input id="cloudNewPassword" type="password" autocomplete="new-password" placeholder="Új jelszó (legalább 8 karakter)" minlength="8"><button id="cloudSetPassword">Jelszó mentése</button></div></details><button id="cloudImport" class="subtle">Korábbi helyi pipák átvitele</button><button id="cloudSync" class="subtle">Szinkronizálás</button><button id="cloudLogout" class="subtle">Kijelentkezés</button><p class="small muted">A korábbi felhőadatok megmaradnak. A helyi pipák internet nélkül is tárolódnak.</p></div></details></div></section><nav class="app-page-nav" aria-label="Alkalmazás navigáció"><button type="button" id="goTraining" aria-current="page"><svg aria-hidden="true" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.4c0-.9.3-1.7.8-2.4l2.4-3.4a2 2 0 0 1 3.6 1.2V16a3.4 3.4 0 0 1-6.8 0Z"/><path d="M20 16v-2.4c0-.9-.3-1.7-.8-2.4l-2.4-3.4a2 2 0 0 0-3.6 1.2V16a3.4 3.4 0 0 0 6.8 0Z"/><path d="M7.4 20v1M16.6 20v1"/></svg><span>Edzéstervem</span></button><button type="button" id="goPlanner">Edzésterv betöltése / szerkesztése</button></nav><h2 class="planner-page-title" id="plannerPageTitle">Saját edzésterv készítése</h2><header><div class="eyebrow"><span id="personalTitle">Egyéni futóprogram</span></div><div class="stats"><div class="stat"><strong id="heroDistance">21,1 km</strong><span>Versenytáv</span></div><div class="stat"><strong id="heroGoal">1:50:00</strong><span>Célidő</span></div><div class="stat"><strong id="heroPace">5:13/km</strong><span>Céltempó</span></div><div class="stat"><strong id="totaldone">0/12</strong><span>Teljesített alkalom</span></div></div></header><section class="dashboard" aria-label="Futásstatisztikák"><h2>Futásstatisztikák</h2><div class="metric-grid"><div class="metric"><strong id="metricKm">0 km</strong><span>Összes lefutott táv</span></div><div class="metric"><strong id="metricRuns">0 / 12</strong><span>Teljesített edzések</span></div><div class="metric"><strong id="metricPace">–</strong><span>Összesített átlagtempó</span></div><div class="metric"><strong id="metricTime">0 perc</strong><span>Összes futásidő</span></div></div><h3 style="margin-top:20px">Tervezett és tényleges kilométerek</h3><div class="chart-legend"><span><i class="legend-plan"></i>Tervezett</span><span><i class="legend-actual"></i>Tény</span></div><div class="weekly-bars" id="weeklyBars" aria-label="Heti kilométerek grafikonja"></div><details class="trend-details"><summary>Tempó és átlagpulzus alakulása</summary><div class="line-charts"><div class="line-chart-card"><div class="chart-legend"><span><i style="background:#43c8c1"></i>Tempó · perc/km (bal tengely)</span><span><i style="background:#e9a5a2"></i>Pulzus · bpm (jobb tengely)</span></div><div id="combinedLineChart"></div></div></div></details></section><details class="planner" id="customPlanner"><summary>✎ Saját edzésterv készítése</summary><p>Állítsd össze a saját programodat, vagy készíts egy személyre szabott kezdőtervet, amelynek minden edzése módosítható. A saját terv hetei automatikusan megjelennek az edzésterv nézetben.</p><div class="planner-grid"><label>Terv neve<input id="plName" value="Saját futóprogram" maxlength="90"></label><label>Kezdés dátuma<input id="plStart" type="date" value="2026-11-16"></label><label>Hetek száma<select id="plWeeks"><option>4</option><option>6</option><option>8</option><option>10</option><option>12</option></select></label><label>Versenytáv<select id="plRace"><option value="21.0975">Félmaraton</option><option value="10">10 km</option><option value="5">5 km</option><option value="42.195">Maraton</option></select></label><label>Célidő (óó:pp)<input id="plGoal" value="1:50" placeholder="1:50"></label><label>Leghosszabb közelmúltbeli futás (km)<input id="plLong" type="number" min="2" max="42" step="0.5" value="15"></label><label>Heti futónapok<select id="plDays"><option value="3">3 nap</option><option value="4">4 nap</option></select></label><label>Heti jelenlegi kilométer<input id="plCurrent" type="number" min="5" max="160" value="30"></label><label>Terhelés<select id="plLoad"><option value="moderate">Kiegyensúlyozott</option><option value="cautious">Óvatos</option><option value="progressive">Progresszív</option><option value="advanced">Haladó</option><option value="pro">Pro</option></select></label></div><div class="planner-actions planner-actions-clean">
 <div class="planner-main-actions"><button id="plSuggest" class="orange" type="button">Új edzésterv készítése AI-val</button><button id="plShow" type="button">Edzésterv megjelenítése</button></div>
 <div class="planner-load-actions"><label class="plan-picker">Mentett edzésterv kiválasztása<select id="plPlanSelect" aria-label="Felhőben tárolt edzésterv kiválasztása"><option value="">Lista betöltése…</option></select></label><button id="plCloudLoad" class="secondary" type="button">Kiválasztott terv betöltése</button></div>
