@@ -314,7 +314,7 @@ const {data:{session},error}=await supabase.auth.getSession();if(error)status('B
 supabase.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'||event==='USER_UPDATED')setTimeout(()=>{void authChanged(session)},0)});
 </script><script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script><script>
 (()=>{'use strict';
-const $=id=>document.getElementById(id),key='halfmarathon-custom-plans-v1';let entries=[];let activeCustomWeek=null;let customMode=false;let principlesText="";let loadedCloudPlanKey=null;let cloudAutoTimer=null;let cloudAutoPromise=Promise.resolve();let cloudAutoRevision=0;
+const $=id=>document.getElementById(id),key='halfmarathon-custom-plans-v1';let entries=[];let activeCustomWeek=null;let customMode=false;let principlesText="";let loadedCloudPlanKey=null;let cloudAutoTimer=null;let cloudAutoPromise=Promise.resolve();let cloudAutoRevision=0;let localDraftDirty=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=(v,def=0)=>Number.isFinite(+v)?+v:def;
 const iso=(d)=>{const x=new Date(d+'T12:00:00');return Number.isNaN(x.getTime())?null:x};
@@ -340,7 +340,7 @@ function clearPlanMetadata(){
   el.value='';
  });
 }
-function persist(){try{localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}));status('Saját terv helyben mentve.');if(customMode){if(entries.length){updateHero();updateCustomSummary()}else showNoPlanState()}scheduleCloudAutoSave()}catch(e){status('Nem sikerült menteni: '+e.message)}}
+function persist(){try{localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}));status('Helyi módosítás – felhőmentéshez nyomd meg az Edzésterv mentése gombot.');if(customMode){if(entries.length){updateHero();updateCustomSummary()}else showNoPlanState()}localDraftDirty=true;stopCloudAutosave()}catch(e){status('Nem sikerült menteni: '+e.message)}}
 function render(){
  const root=$('plRows');
  const openWeeks=new Set([...root.querySelectorAll('details.planner-week-group[open]')].map(x=>x.dataset.week));
@@ -637,12 +637,8 @@ async function cloudList(preferred=''){
   status(info.textContent);
  }finally{btn.disabled=false;btn.textContent='Lista frissítése'}
 }
-function scheduleCloudAutoSave(){
- if(!loadedCloudPlanKey||cloudMutationBusy||unsavedAiDraft)return;
- cloudAutoRevision++;
- clearTimeout(cloudAutoTimer);
- cloudAutoTimer=setTimeout(()=>{cloudAutoTimer=null;cloudAutoPromise=cloudAutoPromise.then(()=>saveLoadedPlan()).catch(e=>status('Automatikus felhőmentési hiba: '+e.message));},650);
-}
+// Cloud writes are explicit: editing persists only in this browser until Save is clicked.
+function scheduleCloudAutoSave(){return;}
 async function saveLoadedPlan(){
  if(!loadedCloudPlanKey||cloudMutationBusy||unsavedAiDraft)return;
  const planKey=loadedCloudPlanKey;
@@ -673,7 +669,7 @@ async function cloudSave(){
   if(!data?.length)throw Error('A felhőterv nem létezik, ezért nem hoztunk létre helyette újat.');
   rememberLastPlan(session.user.id,planKey);
   customMode=true;renderCustom();
-  unsavedAiDraft=false;
+  unsavedAiDraft=false;localDraftDirty=false;
   await cloudList(planKey);
   status('A meglévő edzésterv frissítve a felhőben.');
  }catch(e){status('Felhőmentési hiba: '+e.message)}
@@ -698,7 +694,7 @@ $('plCreateCloud').addEventListener('click',async()=>{
   const planKey='plan-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   const {error}=await client.from('training_plans').insert({user_id:session.user.id,plan_key:planKey,payload:{meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText}});
   if(error)throw error;
-  loadedCloudPlanKey=planKey;unsavedAiDraft=false;rememberLastPlan(session.user.id,planKey);
+  loadedCloudPlanKey=planKey;unsavedAiDraft=false;localDraftDirty=false;rememberLastPlan(session.user.id,planKey);
   customMode=true;activeCustomWeek=0;renderCustom();
   await cloudList(planKey);status('Új edzésterv létrehozva és mentve a felhőben.');
  }catch(e){status('Új terv mentése sikertelen: '+e.message)}finally{btn.disabled=false}
@@ -730,14 +726,14 @@ async function loadCloudPlanByKey(planKey,{automatic=false}={}){
   const {data,error}=await client.from('training_plans').select('payload').eq('user_id',session.user.id).eq('plan_key',planKey).maybeSingle();
   if(error)throw error;
   if(!data){if(!automatic)status('A kiválasztott terv nem található a felhőben.');return false}
-  if(!automatic&&entries.length&&!confirm((window.appTranslate?.('A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')||'A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')))return false;
+  if(!automatic&&localDraftDirty&&!confirm((window.appTranslate?.('A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')||'A kiválasztott felhőterv felülírja a helyben megjelenített tervet. Folytatod?')))return false;
   const payload=data.payload;if(!payload||!Array.isArray(payload.entries))throw Error('Hibás felhőadat');
   for(const [field,id] of Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'}))if(payload.meta?.[field]!=null)$(id).value=String(payload.meta[field]);
   // Disable autosave while replacing the active plan, to avoid overwriting another plan.
   clearTimeout(cloudAutoTimer);cloudAutoTimer=null;
   loadedCloudPlanKey=null;
   unsavedAiDraft=false;entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');
-  render();persist();loadedCloudPlanKey=planKey;
+  render();persist();loadedCloudPlanKey=planKey;localDraftDirty=false;
   customMode=true;activeCustomWeek=0;renderCustom();
   $('plPlanSelect').value=planKey;
   rememberLastPlan(session.user.id,planKey);
@@ -835,11 +831,12 @@ let aiGenerationBusy=false;
 let cloudSyncRunning=false;
 let cloudSyncLastSnapshot=null;
 let cloudSyncUser=null;
+window.addEventListener('beforeunload',e=>{if(localDraftDirty&&loadedCloudPlanKey){e.preventDefault();e.returnValue='';}});
 function cloudSyncEditorBusy(){
  const active=document.activeElement;
  const editing=active&&(['INPUT','TEXTAREA','SELECT'].includes(active.tagName)||active.isContentEditable)&&
    (active.closest('#customPlanner')||active.closest('#personalPlanner')||active.closest('[id^="pl"]'));
- return !!(unsavedAiDraft||aiGenerationBusy||cloudMutationBusy||cloudAutoTimer||editing);
+ return !!(localDraftDirty||unsavedAiDraft||aiGenerationBusy||cloudMutationBusy||cloudAutoTimer||editing);
 }
 async function syncPlansFromServer(){
  if(cloudSyncRunning||document.hidden||cloudSyncEditorBusy()||lastAutoLoadUser===null)return;
