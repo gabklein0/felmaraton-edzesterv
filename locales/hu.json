@@ -107,9 +107,21 @@
     "Céltempó (perc/km) · tól–ig": "Céltempó (perc/km) · tól–ig",
     "Edzés részletei": "Edzés részletei",
     "Edzés törlése": "Edzés törlése",
+    "Korábban mentett saját terv betöltve.": "Korábban mentett saját terv betöltve.",
     "Progresszív": "Progresszív",
     "Haladó": "Haladó",
-    "Pro": "Pro"
+    "Pro": "Pro",
+    "Új edzésterv": "Új edzésterv",
+    "Új terv mentése a felhőbe": "Új terv mentése a felhőbe",
+    "Felhőmentés (meglévő terv)": "Felhőmentés (meglévő terv)",
+    "Kiválasztott felhőterv végleges törlése": "Kiválasztott felhőterv végleges törlése",
+    "Edzések és hetek hozzáadása": "Edzések és hetek hozzáadása",
+    "Edzések és hetek bővítése": "Edzések és hetek bővítése",
+    "Új hét hozzáadása": "Új hét hozzáadása",
+    "Új edzés hozzáadása": "Új edzés hozzáadása",
+    "Mentett edzésterv kiválasztása": "Mentett edzésterv kiválasztása",
+    "A törlés megerősítéséhez írd be: OK": "A törlés megerősítéséhez írd be: OK",
+    "Törlés megszakítva.": "Törlés megszakítva."
   },
   "principles": []
 }
