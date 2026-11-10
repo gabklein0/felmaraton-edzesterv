@@ -121,7 +121,9 @@
     "Új edzés hozzáadása": "Új edzés hozzáadása",
     "Mentett edzésterv kiválasztása": "Mentett edzésterv kiválasztása",
     "A törlés megerősítéséhez írd be: OK": "A törlés megerősítéséhez írd be: OK",
-    "Törlés megszakítva.": "Törlés megszakítva."
+    "Törlés megszakítva.": "Törlés megszakítva.",
+    "Nincs felhőben mentett terv": "Nincs felhőben mentett terv",
+    "Nincs felhőben mentett edzésterv.": "Nincs felhőben mentett edzésterv."
   },
   "principles": []
 }

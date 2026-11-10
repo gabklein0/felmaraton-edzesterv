@@ -122,7 +122,9 @@
     "Új edzés hozzáadása": "Add new workout",
     "Mentett edzésterv kiválasztása": "Select saved training plan",
     "A törlés megerősítéséhez írd be: OK": "To confirm deletion, type OK",
-    "Törlés megszakítva.": "Deletion cancelled."
+    "Törlés megszakítva.": "Deletion cancelled.",
+    "Nincs felhőben mentett terv": "No training plans saved in the cloud",
+    "Nincs felhőben mentett edzésterv.": "No training plans saved in the cloud."
   },
   "principles": [
     "Easy run: conversational, comfortable pace that supports recovery.",

@@ -122,7 +122,9 @@
     "Új edzés hozzáadása": "Ajouter une séance",
     "Mentett edzésterv kiválasztása": "Choisir un plan enregistré",
     "A törlés megerősítéséhez írd be: OK": "Pour confirmer la suppression, saisissez OK",
-    "Törlés megszakítva.": "Suppression annulée."
+    "Törlés megszakítva.": "Suppression annulée.",
+    "Nincs felhőben mentett terv": "Aucun plan enregistré dans le cloud",
+    "Nincs felhőben mentett edzésterv.": "Aucun plan d’entraînement enregistré dans le cloud."
   },
   "principles": [
     "Course facile : allure confortable permettant de parler et favorisant la récupération.",

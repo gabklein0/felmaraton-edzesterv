@@ -122,7 +122,9 @@
     "Új edzés hozzáadása": "Neues Training hinzufügen",
     "Mentett edzésterv kiválasztása": "Gespeicherten Trainingsplan auswählen",
     "A törlés megerősítéséhez írd be: OK": "Zum Bestätigen der Löschung OK eingeben",
-    "Törlés megszakítva.": "Löschen abgebrochen."
+    "Törlés megszakítva.": "Löschen abgebrochen.",
+    "Nincs felhőben mentett terv": "Keine Trainingspläne in der Cloud gespeichert",
+    "Nincs felhőben mentett edzésterv.": "Keine Trainingspläne in der Cloud gespeichert."
   },
   "principles": [
     "Lockerer Lauf: angenehmes Gesprächstempo, das die Regeneration unterstützt.",
