@@ -912,6 +912,16 @@ function apply(){if(updating)return;updating=true;
   let textNode=Array.from(label.childNodes).find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
   if(textNode){const translated=t(key);if(textNode.textContent!==translated)textNode.textContent=translated}
  }
+ // Empty selection placeholders are inserted dynamically and must follow the UI language.
+ const emptyChoice={hu:'— Válassz —',en:'— Select —',fr:'— Choisir —',de:'— Auswählen —'};
+ for(const id of ['plWeeks','plRace','plDays','plLoad']){
+  const field=document.getElementById(id);if(!field)continue;
+  const blank=Array.from(field.options).find(opt=>opt.value==='');
+  if(blank)blank.textContent=emptyChoice[window.trainingLanguage]||emptyChoice.hu;
+ }
+ // Native date input formatting is controlled by the browser/OS, but provide the matching language hint.
+ const startDate=document.getElementById('plStart');
+ if(startDate)startDate.lang=({hu:'hu-HU',en:'en-GB',fr:'fr-FR',de:'de-DE'})[window.trainingLanguage]||'hu-HU';
  const fixedSelectOptions={plRace:{'21.0975':'Félmaraton','42.195':'Maraton'},plLoad:{moderate:'Kiegyensúlyozott',cautious:'Óvatos',progressive:'Progresszív',advanced:'Haladó',pro:'Pro'}};
  for(const [fieldId,values] of Object.entries(fixedSelectOptions)){
   const field=document.getElementById(fieldId);if(!field)continue;
