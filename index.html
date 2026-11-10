@@ -490,7 +490,7 @@ function updateCustomSummary(){
  $('totaldone').textContent=completed.length+' / '+entries.length;
  $('metricRuns').textContent=completed.length+' / '+entries.length;
  const number=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)&&n>0?n:0};
- const duration=v=>{const match=/^(\d+):(\d{1,2})$/.exec(String(v||'').trim());return match&&+match[2]<60?(+match[1]+(+match[2])/60):0};
+ const duration=v=>journalDurationMinutes(v)??0;
  let km=0,minutes=0,paceKm=0;
  const weeksCount=Math.max(1,Math.min(52,m.weeks||4));
  const planned=Array(weeksCount).fill(0),actual=Array(weeksCount).fill(0);
@@ -568,7 +568,7 @@ function showNoPlanState(){
 }
 function renderCustom(){if(!customMode)return;if(!entries.length){showNoPlanState();return}window.customPlanActive=true;updateHero();updateCustomSummary();updatePrinciples();$('legacyTabs').hidden=true;$('panels').hidden=true;$('customTabs').hidden=false;$('customPanels').hidden=false;const tabs=$('customTabs'),panels=$('customPanels');tabs.innerHTML='';panels.innerHTML='';const m=getMeta();const count=Math.max(1,Math.min(52,m.weeks||4));if(activeCustomWeek!=null&&activeCustomWeek>=count)activeCustomWeek=0;
 for(let w=0;w<count;w++){const start=datePlus(m.start,w*7),end=datePlus(m.start,w*7+6);const button=document.createElement('button');button.type='button';button.className=activeCustomWeek===w?'active':'';button.textContent=`${w+1}. hét · ${start.slice(5)} – ${end.slice(5)}`;button.setAttribute('aria-expanded',String(activeCustomWeek===w));button.addEventListener('click',()=>{activeCustomWeek=activeCustomWeek===w?null:w;renderCustom()});tabs.append(button);
-if(activeCustomWeek!==w)continue;const section=document.createElement('section');section.className='panel active';section.style.display='block';const title=document.createElement('h2');title.textContent=`${w+1}. hét · ${start} – ${end}`;section.append(title);const weekEntries=entries.filter(e=>e.date>=start&&e.date<=end);for(const e of weekEntries){const displayName=e.name;const displayDetails=e.details;const displayPace=e.pace;const article=document.createElement('article');article.className='session';const h=document.createElement('h3');h.textContent=`${e.date} · ${displayName} · ${e.km} km`;article.append(h);const d=document.createElement('p');d.textContent=displayDetails||'';article.append(d);const pace=document.createElement('p');pace.textContent=`Céltempó: ${displayPace ? (/\/km|perc\s*\/\s*km/i.test(displayPace) || /[a-záéíóöőúüű]/i.test(displayPace) ? displayPace : displayPace+'/km') : '–'}`;article.append(pace);const label=document.createElement('label');label.className='done';const chk=document.createElement('input');chk.type='checkbox';chk.checked=!!e.completed;chk.addEventListener('change',()=>{if(!confirm(chk.checked?(window.appTranslate?.('Teljesítetted az edzést?')||'Teljesítetted az edzést?'):(window.appTranslate?.('Visszavonod a teljesítést?')||'Visszavonod a teljesítést?'))){chk.checked=!chk.checked;return}e.completed=chk.checked;log.hidden=!e.completed;if(!e.completed){log.open=false;delete e.actualKm;delete e.actualTime;delete e.actualHr;delete e.actualNotes}persist()});label.append(chk,document.createTextNode(' Teljesítve'));article.append(label);const log=document.createElement('details');log.className='journal';const summary=document.createElement('summary');summary.textContent='Futásnapló';log.append(summary);const fields=[['actualKm','Tényleges táv (km)'],['actualTime','Idő (perc:mp)'],['actualHr','Átlagpulzus'],['actualNotes','Megjegyzés']];for(const [field,labelText] of fields){const l=document.createElement('label');l.textContent=labelText;const inp=document.createElement('input');inp.value=field==='actualKm'?(e[field]!==undefined&&e[field]!==null&&String(e[field]).trim()!==''?Number(String(e[field]).replace(',','.')).toFixed(1):Number(String(e.km||0).replace(',','.')).toFixed(1)):(e[field]??'');if(field==='actualKm'){inp.type='number';inp.min='0';inp.max='100';inp.step='0.1';inp.inputMode='decimal';}inp.placeholder=field==='actualTime'?'00:00':field==='actualKm'?'0,0':'';inp.addEventListener('change',()=>{e[field]=inp.value;persist()});l.append(inp);log.append(l)}log.hidden=!e.completed;article.append(log);section.append(article)}const done=weekEntries.filter(e=>e.completed).length;const summary=document.createElement('div');summary.className='summary';summary.textContent=`Heti teljesítés: ${done} / ${weekEntries.length} edzés`;section.append(summary);panels.append(section)}
+if(activeCustomWeek!==w)continue;const section=document.createElement('section');section.className='panel active';section.style.display='block';const title=document.createElement('h2');title.textContent=`${w+1}. hét · ${start} – ${end}`;section.append(title);const weekEntries=entries.filter(e=>e.date>=start&&e.date<=end);for(const e of weekEntries){const displayName=e.name;const displayDetails=e.details;const displayPace=e.pace;const article=document.createElement('article');article.className='session';const h=document.createElement('h3');h.textContent=`${e.date} · ${displayName} · ${e.km} km`;article.append(h);const d=document.createElement('p');d.textContent=displayDetails||'';article.append(d);const pace=document.createElement('p');pace.textContent=`Céltempó: ${displayPace ? (/\/km|perc\s*\/\s*km/i.test(displayPace) || /[a-záéíóöőúüű]/i.test(displayPace) ? displayPace : displayPace+'/km') : '–'}`;article.append(pace);const label=document.createElement('label');label.className='done';const chk=document.createElement('input');chk.type='checkbox';chk.checked=!!e.completed;chk.addEventListener('change',()=>{if(!confirm(chk.checked?(window.appTranslate?.('Teljesítetted az edzést?')||'Teljesítetted az edzést?'):(window.appTranslate?.('Visszavonod a teljesítést?')||'Visszavonod a teljesítést?'))){chk.checked=!chk.checked;return}e.completed=chk.checked;log.hidden=!e.completed;if(!e.completed){log.open=false;clearTimeout(progressTimers.get(progressId(e)));progressTimers.delete(progressId(e));delete e.actualKm;delete e.actualTime;delete e.actualHr;delete e.actualNotes}saveWorkoutProgress(e);renderCustom()});label.append(chk,document.createTextNode(' Teljesítve'));article.append(label);const log=document.createElement('details');log.className='journal';const summary=document.createElement('summary');summary.textContent='Futásnapló';log.append(summary);const fields=[['actualKm','Tényleges táv (km)'],['actualTime','Idő (perc:mp)'],['actualHr','Átlagpulzus'],['actualNotes','Megjegyzés']];for(const [field,labelText] of fields){const l=document.createElement('label');l.textContent=labelText;const inp=document.createElement('input');inp.value=field==='actualKm'?(e[field]!==undefined&&e[field]!==null&&String(e[field]).trim()!==''?Number(String(e[field]).replace(',','.')).toFixed(1):Number(String(e.km||0).replace(',','.')).toFixed(1)):(e[field]??'');if(field==='actualKm'){inp.type='number';inp.min='0';inp.max='100';inp.step='0.1';inp.inputMode='decimal';}inp.placeholder=field==='actualTime'?'00:00':field==='actualKm'?'0,0':'';inp.addEventListener('input',()=>{e[field]=inp.value;scheduleWorkoutProgress(e);updateCustomSummary()});inp.addEventListener('change',()=>{e[field]=inp.value;saveWorkoutProgress(e);updateCustomSummary()});l.append(inp);log.append(l)}log.hidden=!e.completed;article.append(log);section.append(article)}const done=weekEntries.filter(e=>e.completed).length;const summary=document.createElement('div');summary.className='summary';summary.textContent=`Heti teljesítés: ${done} / ${weekEntries.length} edzés`;section.append(summary);panels.append(section)}
 positionDashboard();
 }
 window.refreshActivePlanSummary=()=>{if(customMode){if(entries.length){updateHero();updateCustomSummary()}else showNoPlanState()}};
@@ -583,6 +583,86 @@ const SUPA_URL='https://dlqinyhxpemzdrgwqsxk.supabase.co';
 // The existing public anon key is reused from the established application, never the service role key.
 const publicKey=document.querySelector('meta[name="supabase-anon-key"]')?.content||window.FUTAS_SUPABASE_ANON_KEY||'';
 async function getCloudClient(){const client=window.runningAppSupabase;if(!client)throw Error('A bejelentkezés még inicializálódik. Próbáld újra néhány másodperc múlva.');const {data:{session},error}=await client.auth.getSession();if(error)throw error;if(!session)throw Error('Jelentkezz be a fenti fiókodba, majd próbáld újra.');return {client,session}}
+
+// Workout completion and running log are independent of manual plan saves.
+// Queue is persisted before any network request, and remains pending on failure.
+// Unified journal time parser: mm:ss, hh:mm:ss, or plain minutes.
+function journalDurationMinutes(value){
+ const raw=String(value??'').trim().replace(',','.');
+ if(!raw)return null;
+ if(/^\d+(?:\.\d+)?$/.test(raw)){const n=Number(raw);return Number.isFinite(n)&&n>=0?n:null}
+ const parts=raw.split(':');
+ if(parts.length<2||parts.length>3||parts.some(p=>!/^\d+$/.test(p)))return null;
+ const nums=parts.map(Number);
+ if(nums.slice(1).some(n=>n>=60))return null;
+ const seconds=parts.length===3?nums[0]*3600+nums[1]*60+nums[2]:nums[0]*60+nums[1];
+ return seconds/60;
+}
+function journalFormatMinutes(value){
+ const minutes=Number(value);
+ if(!Number.isFinite(minutes)||minutes<0)return '';
+ const total=Math.round(minutes*60);
+ return `${Math.floor(total/60)}:${String(total%60).padStart(2,'0')}`;
+}
+const progressFields=['completed','actualKm','actualTime','actualHr','actualNotes'];
+const progressKey=(uid,plan)=>'running-workout-progress-v2:'+uid+':'+plan;
+const progressPendingKey=(uid,plan)=>progressKey(uid,plan)+':pending';
+const progressRead=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')}catch{return {}}};
+const progressWrite=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn('Progress cache:',e)}};
+const progressId=e=>e.date+'|'+e.name;
+const progressTimers=new Map();let progressSending=false;
+function progressSnapshot(e){return {completed:!!e.completed,actualKm:e.actualKm??'',actualTime:e.actualTime??'',actualHr:e.actualHr??'',actualNotes:e.actualNotes??''}}
+function saveWorkoutProgress(e){
+ const uid=window.runningAppSupabase?.auth?currentProgressUser:null;
+ const plan=loadedCloudPlanKey;
+ if(!uid||!plan){try{localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}))}catch(_){}return}
+ const id=progressId(e),value=progressSnapshot(e);
+ const cacheKey=progressKey(uid,plan),pendingKey=progressPendingKey(uid,plan);
+ const cache=progressRead(cacheKey),pending=progressRead(pendingKey);
+ cache[id]=value;pending[id]=value;progressWrite(cacheKey,cache);progressWrite(pendingKey,pending);
+ void flushWorkoutProgress();
+}
+function scheduleWorkoutProgress(e){const id=progressId(e);clearTimeout(progressTimers.get(id));progressTimers.set(id,setTimeout(()=>{progressTimers.delete(id);saveWorkoutProgress(e)},900));}
+let currentProgressUser=null;
+async function restoreWorkoutProgress(uid,plan){
+ currentProgressUser=uid;
+ const cacheKey=progressKey(uid,plan),pendingKey=progressPendingKey(uid,plan);
+ const pending=progressRead(pendingKey);
+ let cloud={};
+ try{
+  const {client}=await getCloudClient();
+  const {data,error}=await client.from('workouts').select('workout_date,workout_name,completed,distance_km,duration_minutes,average_heart_rate,notes').eq('user_id',uid);
+  if(error)throw error;
+  for(const row of data||[]){
+   const id=row.workout_date+'|'+row.workout_name;
+   cloud[id]={completed:!!row.completed,actualKm:row.distance_km??'',actualTime:row.duration_minutes==null?'':journalFormatMinutes(row.duration_minutes),actualHr:row.average_heart_rate??'',actualNotes:row.notes??''};
+  }
+ }catch(error){console.warn('Workout progress load:',error);cloud=progressRead(cacheKey)}
+ const merged={...cloud,...pending};for(const v of Object.values(merged)){if(v&&!v.completed){v.actualKm='';v.actualTime='';v.actualHr='';v.actualNotes=''}}progressWrite(cacheKey,merged);
+ if(loadedCloudPlanKey!==plan)return;
+ for(const e of entries){const saved=merged[progressId(e)];if(saved)for(const field of progressFields)e[field]=saved[field]}
+ void flushWorkoutProgress();
+}
+async function flushWorkoutProgress(){
+ if(progressSending||!navigator.onLine||!currentProgressUser||!loadedCloudPlanKey)return;
+ progressSending=true;
+ const uid=currentProgressUser,plan=loadedCloudPlanKey,pendingKey=progressPendingKey(uid,plan);
+ try{
+  const pending=progressRead(pendingKey),items=Object.entries(pending);if(!items.length)return;
+  const {client,session}=await getCloudClient();if(session.user.id!==uid)return;
+  const rows=items.map(([id,v])=>{
+   const split=id.indexOf('|'),duration=journalDurationMinutes(v.actualTime);
+   const km=Number(String(v.actualKm||'').replace(',','.'));
+   const hr=Number(v.actualHr);
+   return {user_id:uid,workout_date:id.slice(0,split),workout_name:id.slice(split+1),completed:!!v.completed,distance_km:v.completed&&km>0&&km<=100?km:null,duration_minutes:v.completed?duration:null,average_heart_rate:v.completed&&hr>=30&&hr<=250?hr:null,notes:v.completed?String(v.actualNotes||'').slice(0,1000):''};
+  });
+  const {error}=await client.from('workouts').upsert(rows,{onConflict:'user_id,workout_date,workout_name'});if(error)throw error;
+  const now=progressRead(pendingKey);for(const [id,v] of items)if(JSON.stringify(now[id])===JSON.stringify(v))delete now[id];progressWrite(pendingKey,now);
+ }catch(error){console.warn('Workout autosave failed; retained locally:',error)}finally{progressSending=false;if(navigator.onLine&&currentProgressUser===uid&&loadedCloudPlanKey===plan&&Object.keys(progressRead(pendingKey)).length){setTimeout(()=>void flushWorkoutProgress(),1200)}}
+}
+window.addEventListener('online',()=>void flushWorkoutProgress());
+window.addEventListener('visibilitychange',()=>{if(!document.hidden)void flushWorkoutProgress()});
+
 const PLAN_CURRENT='current';
 const LEGACY_PLAN_KEY='legacy-halfmarathon-2026-12-06';
 // Remember only the last plan identifier, scoped to the signed-in account.
@@ -699,7 +779,7 @@ $('plCreateCloud').addEventListener('click',async()=>{
   const planKey='plan-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   const {error}=await client.from('training_plans').insert({user_id:session.user.id,plan_key:planKey,payload:{meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText}});
   if(error)throw error;
-  loadedCloudPlanKey=planKey;unsavedAiDraft=false;localDraftDirty=false;rememberLastPlan(session.user.id,planKey);
+  loadedCloudPlanKey=planKey;currentProgressUser=session.user.id;unsavedAiDraft=false;localDraftDirty=false;rememberLastPlan(session.user.id,planKey);
   customMode=true;activeCustomWeek=0;renderCustom();
   await cloudList(planKey);status('Új edzésterv létrehozva és mentve a felhőben.');
  }catch(e){status('Új terv mentése sikertelen: '+e.message)}finally{btn.disabled=false}
@@ -739,7 +819,7 @@ async function loadCloudPlanByKey(planKey,{automatic=false}={}){
   loadedCloudPlanKey=null;
   unsavedAiDraft=false;entries=payload.entries.slice(0,500);principlesText=String(payload.principlesText||'');
   render();persist();loadedCloudPlanKey=planKey;localDraftDirty=false;
-  customMode=true;activeCustomWeek=0;renderCustom();
+  customMode=true;activeCustomWeek=0;await restoreWorkoutProgress(session.user.id,planKey);renderCustom();
   $('plPlanSelect').value=planKey;
   rememberLastPlan(session.user.id,planKey);
   status('„'+(payload.meta?.name||planKey)+'” betöltve a felhőből.');
@@ -887,7 +967,7 @@ async function syncPlansFromServer(){
    const record=records.find(r=>r.plan_key===desired);
    const payload=record?.payload;
    const samePlan=loadedCloudPlanKey===desired;
-   const sameEntries=JSON.stringify(entries)===JSON.stringify(payload?.entries);
+   const stripProgress=items=>(items||[]).map(({completed,actualKm,actualTime,actualHr,actualNotes,...rest})=>rest);const sameEntries=JSON.stringify(stripProgress(entries))===JSON.stringify(stripProgress(payload?.entries));
    const samePrinciples=principlesText===String(payload?.principlesText||'');
    const sameMeta=payload?.meta&&Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'}).every(([field,id])=>String($(id).value)===String(payload.meta[field]??''));
    // Unchanged server data must not trigger render(), which resets open panels and scroll.
