@@ -793,7 +793,7 @@ if(activeCustomWeek!==w)continue;const section=document.createElement('section')
   };const t=words[lang]||words.hu;
   const planned=Number(String(e.km??'').replace(',','.'));
   if(Number.isFinite(planned)&&planned>0){
-   const action=document.createElement('button');action.type='button';action.className='secondary';action.textContent=t.accept+' ('+planned.toLocaleString(lang==='hu'?'hu-HU':'en-US',{maximumFractionDigits:2})+' km)';
+   const action=document.createElement('button');action.type='button';action.className='secondary';action.style.backgroundColor='#426A8A';action.style.color='#FFFFFF';action.style.borderColor='#426A8A';action.textContent=t.accept+' ('+planned.toLocaleString(lang==='hu'?'hu-HU':'en-US',{maximumFractionDigits:2})+' km)';
    action.addEventListener('click',()=>{inp.value=String(planned);e.actualKm=inp.value;updateWorkoutCompletion(e);paintWorkoutStatus(completion,e);saveWorkoutProgress(e);updatePaceOutput();updateCustomSummary();const weekSummary=section.querySelector('.summary');if(weekSummary)weekSummary.textContent='Heti teljesítés: '+weekEntries.filter(item=>item.completed).length+' / '+weekEntries.length+' edzés'});
    log.append(action);
   }
