@@ -861,7 +861,7 @@ function workoutStatus(e){
 function paintWorkoutStatus(node,e){
  const lang=document.getElementById('appLanguage')?.value||'hu';
  const state=workoutStatus(e),labels=workoutStatusCopy[lang]||workoutStatusCopy.hu;
- node.textContent=labels[state];
+ node.textContent=(state==='done'?'✓ ':'')+labels[state];
  node.style.color=state==='done'?'#65D49A':state==='partial'?'#f5b766':'#a9b8c8';
 }
 const progressFields=['completed','actualKm','actualTime','actualHr','actualNotes'];
