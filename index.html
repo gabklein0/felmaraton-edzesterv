@@ -892,10 +892,11 @@ async function restoreWorkoutProgress(uid,plan){
  void flushWorkoutProgress();
 }
 // Cross-device workout log synchronization, independent from plan metadata changes.
+let progressResetBusy=false;
 let progressRefreshBusy=false;
 let progressRefreshLast=0;
 async function refreshWorkoutProgressFromCloud(){
- if(progressRefreshBusy||document.hidden||!navigator.onLine||!currentProgressUser||!loadedCloudPlanKey||!customMode||!entries.length)return;
+ if(progressResetBusy||progressRefreshBusy||document.hidden||!navigator.onLine||!currentProgressUser||!loadedCloudPlanKey||!customMode||!entries.length)return;
  // Never replace an input while the user is typing or a local edit is waiting to be saved.
  const active=document.activeElement;
  if((active?.matches?.('.journal input, .journal textarea') && document.hasFocus())||progressTimers.size||progressSending)return;
@@ -944,7 +945,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refre
 window.addEventListener('online',()=>{void flushWorkoutProgress().then(()=>refreshWorkoutProgressFromCloud())});
 setInterval(()=>{void flushWorkoutProgress().then(()=>refreshWorkoutProgressFromCloud())},12000);
 async function flushWorkoutProgress(){
- if(progressSending||!navigator.onLine||!currentProgressUser||!loadedCloudPlanKey)return;
+ if(progressResetBusy||progressSending||!navigator.onLine||!currentProgressUser||!loadedCloudPlanKey)return;
  progressSending=true;
  const uid=currentProgressUser,plan=loadedCloudPlanKey,pendingKey=progressPendingKey(uid,plan);
  try{
@@ -1321,7 +1322,7 @@ $('reset').addEventListener('click',async event=>{
  const confirmText='Csak az aktuális edzésterv ("'+name+'") teljesítési pipáit és futásnapló-adatait töröljük.\\n\\nAz edzésterv és minden másik terv változatlan marad. A művelet nem vonható vissza. Folytatod?'.replaceAll('\\n','\n');
  const confirmed=typeof window.appConfirm==='function'?await window.appConfirm(confirmText):window.confirm(confirmText);
  if(!confirmed)return;
- const btn=$('reset');btn.disabled=true;
+ const btn=$('reset');btn.disabled=true;progressResetBusy=true;
  const backup=JSON.parse(JSON.stringify(entries));
  try{
   // Drain queued journal edits before deleting them, so no in-flight write can restore results.
@@ -1332,7 +1333,7 @@ $('reset').addEventListener('click',async event=>{
   const cacheKey=uid?progressKey(uid,planKey):null;
   const oldPending=pendingKey?progressRead(pendingKey):{};
   const oldCache=cacheKey?progressRead(cacheKey):{};
-  while(progressSending)await new Promise(resolve=>setTimeout(resolve,100));
+  while(progressSending||progressRefreshBusy)await new Promise(resolve=>setTimeout(resolve,100));
   // Do not allow an older autosave to restore deleted results after the deletion.
   await finishCloudAutoSave();
   if(loadedCloudPlanKey!==planKey)throw Error('Időközben megváltozott az aktív terv.');
@@ -1369,7 +1370,7 @@ $('reset').addEventListener('click',async event=>{
   entries=backup;render();if(customMode)renderCustom();
   status('A törlés nem sikerült: '+error.message);
   window.alert('A törlés nem sikerült: '+error.message);
- }finally{btn.disabled=false}
+ }finally{progressResetBusy=false;btn.disabled=false}
 },true);
 $('plCloudSave').addEventListener('click',()=>void cloudSave());
 $('plSaveUnified').addEventListener('click',()=>{if(loadedCloudPlanKey){$('plCloudSave').click()}else{void createCloudPlan()}});
