@@ -964,6 +964,23 @@ function showPlanSaveFailure(error){
  const detail=String(error?.message||error||'').trim();
  window.alert((messages[lang]||messages.hu)+(detail?'\n\n'+detail:''));
 }
+// Plan names are unique per account (case- and whitespace-insensitive).
+const duplicateNameText={
+ hu:'Már létezik edzésterv ezen a néven. Kérlek, adj meg másik nevet.',
+ en:'A training plan with this name already exists. Please choose a different name.',
+ fr:'Un plan d’entraînement porte déjà ce nom. Veuillez choisir un autre nom.',
+ de:'Ein Trainingsplan mit diesem Namen existiert bereits. Bitte wähle einen anderen Namen.'
+};
+function normalizedPlanName(name){return String(name||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();}
+async function assertUniquePlanName(client,userId,excludeKey=''){
+ const {data,error}=await client.from('training_plans').select('plan_key,payload').eq('user_id',userId);
+ if(error)throw error;
+ const name=normalizedPlanName(getMeta().name);
+ if((data||[]).some(r=>r.plan_key!==excludeKey&&normalizedPlanName(r.payload?.meta?.name)===name)){
+  const msg=duplicateNameText[$('appLanguage')?.value]||duplicateNameText.hu;
+  $('plName')?.focus();throw Object.assign(new Error(msg),{duplicatePlanName:true});
+ }
+}
 async function cloudSave(){
  if(!loadedCloudPlanKey){const error=Error('Nincs betöltött felhőterv.');status(error.message);showPlanSaveFailure(error);return}
  const planKey=loadedCloudPlanKey;
@@ -972,6 +989,7 @@ async function cloudSave(){
   await finishCloudAutoSave();
   if(loadedCloudPlanKey!==planKey)throw Error('A betöltött terv időközben megváltozott.');
   const {client,session}=await getCloudClient();
+  await assertUniquePlanName(client,session.user.id,planKey);
   const {data,error}=await client.from('training_plans').update({payload:{meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText},updated_at:new Date().toISOString()}).eq('user_id',session.user.id).eq('plan_key',planKey).select('plan_key');
   if(error)throw error;
   if(!data?.length)throw Error('A felhőterv nem létezik, ezért nem hoztunk létre helyette újat.');
@@ -981,41 +999,48 @@ async function cloudSave(){
   await cloudList(planKey);
   status('A meglévő edzésterv frissítve a felhőben.');
   showPlanSavedConfirmation();
- }catch(e){status('Felhőmentési hiba: '+e.message);showPlanSaveFailure(e)}
+ }catch(e){status('Felhőmentési hiba: '+e.message);if(e.duplicatePlanName)window.alert(e.message);else showPlanSaveFailure(e)}
 }
 // New-plan flow: the first click always clears the form and requests fresh metadata.
 const manualText={
- hu:{next:'Adatok megadva – tovább a szerkesztéshez',intro:'Új kézi edzésterv: add meg a hat kötelező adatot, majd folytasd a szerkesztéssel.',required:'Töltsd ki a csillaggal jelölt kötelező mezőket.',discard:'A jelenlegi terv mentetlen módosításai elveszhetnek. Létrehozod az új kézi tervet?',ready:'Új kézi edzésterv. Adj hozzá edzéseket, majd mentsd a tervet.',invalid:'Ellenőrizd a kötelező adatokat.'},
- en:{next:'Continue to workout editor',intro:'New manual plan: enter the six required fields, then continue to the editor.',required:'Complete all fields marked with an asterisk.',discard:'Unsaved changes to the current plan may be lost. Create a new manual plan?',ready:'New manual plan. Add workouts and then save the plan.',invalid:'Check the required fields.'},
- fr:{next:'Continuer vers l’éditeur',intro:'Nouveau plan manuel : renseignez les six champs obligatoires avant de continuer.',required:'Remplissez tous les champs marqués d’un astérisque.',discard:'Les modifications non enregistrées du plan actuel peuvent être perdues. Créer un nouveau plan manuel ?',ready:'Nouveau plan manuel. Ajoutez des séances, puis enregistrez le plan.',invalid:'Vérifiez les champs obligatoires.'},
- de:{next:'Weiter zum Trainingseditor',intro:'Neuer manueller Plan: Bitte zuerst die sechs Pflichtfelder ausfüllen.',required:'Fülle alle mit einem Stern markierten Felder aus.',discard:'Nicht gespeicherte Änderungen am aktuellen Plan können verloren gehen. Neuen manuellen Plan erstellen?',ready:'Neuer manueller Plan. Füge Trainingseinheiten hinzu und speichere den Plan.',invalid:'Bitte überprüfe die Pflichtfelder.'}
+ hu:{next:'Adatok megadva – tovább a szerkesztéshez',intro:'Új kézi edzésterv: add meg a kötelező adatokat, majd folytasd a szerkesztéssel.',required:'Töltsd ki a csillaggal jelölt kötelező mezőket.',discard:'A jelenlegi terv mentetlen módosításai elveszhetnek. Létrehozod az új kézi tervet?',ready:'Új kézi edzésterv. Adj hozzá edzéseket, majd mentsd a tervet.',invalid:'Ellenőrizd a kötelező adatokat.'},
+ en:{next:'Continue to workout editor',intro:'New manual plan: enter the required fields, then continue to the editor.',required:'Complete all fields marked with an asterisk.',discard:'Unsaved changes to the current plan may be lost. Create a new manual plan?',ready:'New manual plan. Add workouts and then save the plan.',invalid:'Check the required fields.'},
+ fr:{next:'Continuer vers l’éditeur',intro:'Nouveau plan manuel : renseignez les champs obligatoires avant de continuer.',required:'Remplissez tous les champs marqués d’un astérisque.',discard:'Les modifications non enregistrées du plan actuel peuvent être perdues. Créer un nouveau plan manuel ?',ready:'Nouveau plan manuel. Ajoutez des séances, puis enregistrez le plan.',invalid:'Vérifiez les champs obligatoires.'},
+ de:{next:'Weiter zum Trainingseditor',intro:'Neuer manueller Plan: Bitte zuerst die Pflichtfelder ausfüllen.',required:'Fülle alle mit einem Stern markierten Felder aus.',discard:'Nicht gespeicherte Änderungen am aktuellen Plan können verloren gehen. Neuen manuellen Plan erstellen?',ready:'Neuer manueller Plan. Füge Trainingseinheiten hinzu und speichere den Plan.',invalid:'Bitte überprüfe die Pflichtfelder.'}
 };
 const manualLang=()=>manualText[$('appLanguage')?.value]||manualText.hu;
 let manualSetupPending=false;
 const continueManual=$('plNew');
 const manualOriginalLabel={hu:'Új kézi edzésterv',en:'New manual training plan',fr:'Nouveau plan manuel',de:'Neuer manueller Trainingsplan'};
-const manualIntro=document.createElement('p');manualIntro.id='plManualIntro';manualIntro.hidden=true;manualIntro.setAttribute('role','status');
-$('customPlanner').querySelector('.planner-grid').before(manualIntro);
-function translateManual(){continueManual.textContent=manualSetupPending?manualLang().next:(manualOriginalLabel[$('appLanguage')?.value]||manualOriginalLabel.hu);manualIntro.textContent=manualLang().intro}
-translateManual();$('appLanguage')?.addEventListener('change',translateManual);
+function translateManual(){continueManual.textContent=manualSetupPending?manualLang().next:(manualOriginalLabel[$('appLanguage')?.value]||manualOriginalLabel.hu)}
+translateManual();$('appLanguage')?.addEventListener('change',()=>{translateManual();for(const id of ['plWeeks','plRace','plDays','plLoad']){const opt=$(id)?.querySelector('option[data-empty-choice]');if(opt)opt.textContent=({hu:'— Válassz —',en:'— Select —',fr:'— Sélectionner —',de:'— Auswählen —'}[$('appLanguage')?.value]||'— Válassz —')}});
 function resetManualFields(){
  for(const id of ['plName','plStart','plGoal','plLong','plCurrent'])$(id).value='';
- for(const [id,value] of Object.entries({plWeeks:'4',plRace:'21.0975',plDays:'3',plLoad:'moderate'}))$(id).value=value;
+ // Empty placeholder option ensures selects do not silently choose their first value.
+ for(const id of ['plWeeks','plRace','plDays','plLoad']){
+  const select=$(id);
+  if(!select.querySelector('option[value=""]')){
+   const empty=document.createElement('option');
+   empty.value='';empty.textContent=({hu:'— Válassz —',en:'— Select —',fr:'— Sélectionner —',de:'— Auswählen —'}[$('appLanguage')?.value]||'— Válassz —');empty.dataset.emptyChoice='true';
+   select.insertBefore(empty,select.firstChild);
+  }
+  select.value='';
+ }
  for(const id of ['plName','plStart','plWeeks','plRace','plGoal','plDays'])$(id).removeAttribute('aria-invalid');
 }
 continueManual.addEventListener('click',async()=>{
  if(!manualSetupPending){
-  resetManualFields();manualSetupPending=true;manualIntro.hidden=false;
+  resetManualFields();manualSetupPending=true;
   continueManual.classList.add('manual-ready');continueManual.setAttribute('aria-label',manualLang().next);
   translateManual();window.runningAppNavigate?.('load');
-  $('plName').focus();status(manualLang().required);return;
+  $('plName').focus();await window.appAlert(manualLang().required);return;
  }
  try{validateRequiredPlanFields()}catch(e){status(manualLang().invalid);window.alert(manualLang().required);return}
  if((loadedCloudPlanKey||localDraftDirty||entries.length)&&!await window.appConfirm(manualLang().discard))return;
  try{
   await finishCloudAutoSave();stopCloudAutosave();loadedCloudPlanKey=null;
   entries=[];principlesText='';unsavedAiDraft=true;localDraftDirty=true;
-  manualSetupPending=false;manualIntro.hidden=true;
+  manualSetupPending=false;
   continueManual.classList.remove('manual-ready');continueManual.removeAttribute('aria-label');translateManual();
   render();persist();showNoPlanState();status(manualLang().ready);
   window.runningAppNavigate?.('edit');
@@ -1028,6 +1053,7 @@ async function createCloudPlan(){
  const btn=$('plSaveUnified');btn.disabled=true;
  try{
   const {client,session}=await getCloudClient();
+  await assertUniquePlanName(client,session.user.id);
   const planKey='plan-'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
   const {error}=await client.from('training_plans').insert({user_id:session.user.id,plan_key:planKey,payload:{meta:getMeta(),entries:JSON.parse(JSON.stringify(entries)),principlesText}});
   if(error)throw error;
@@ -1035,7 +1061,7 @@ async function createCloudPlan(){
   customMode=true;activeCustomWeek=0;renderCustom();
   await cloudList(planKey);status('Új edzésterv létrehozva és mentve a felhőben.');
   showPlanSavedConfirmation();
- }catch(e){status('Új terv mentése sikertelen: '+e.message);showPlanSaveFailure(e)}finally{btn.disabled=false}
+ }catch(e){status('Új terv mentése sikertelen: '+e.message);if(e.duplicatePlanName)window.alert(e.message);else showPlanSaveFailure(e)}finally{btn.disabled=false}
 }
 $('plClear').addEventListener('click',async()=>{
  const planKey=$('plPlanSelect').value;
