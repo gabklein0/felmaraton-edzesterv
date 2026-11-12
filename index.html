@@ -518,7 +518,8 @@ function render(){
     ev.preventDefault();ev.stopPropagation();
     const field=btn.dataset.paceStep,inp=el.querySelector(`[data-f="${field}"]`);
     const raw=inp.value.trim(),match=/^(\d{1,2}):([0-5]\d)$/.exec(raw);
-    const current=match?Number(match[1])*60+Number(match[2]):360;
+    const placeholderMatch=/^(\d{1,2}):([0-5]\d)$/.exec(inp.placeholder||'');
+     const current=match?Number(match[1])*60+Number(match[2]):placeholderMatch?Number(placeholderMatch[1])*60+Number(placeholderMatch[2]):360;
     const delta=Number(btn.dataset.paceDelta);
     let next=Math.max(0,Math.min(3599,current+delta));
     const other=el.querySelector(`[data-f="${field==='paceFrom'?'paceTo':'paceFrom'}"]`).value.trim();
