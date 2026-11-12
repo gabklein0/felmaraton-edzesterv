@@ -1,0 +1,54 @@
+name: Tesztverzió – GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Tesztoldal frissítése
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Forráskód letöltése
+        uses: actions/checkout@v4
+      - name: Tesztoldal összeállítása
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html _site/
+          for f in manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png; do
+            if [ -f "$f" ]; then cp "$f" _site/; fi
+          done
+          if [ -d locales ]; then cp -R locales _site/; fi
+          # GitHub Pages alatt az alkalmazás almappában fut; az ikonok relatívak legyenek.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('_site/index.html')
+          s=p.read_text(encoding='utf-8')
+          for name in ('manifest.webmanifest','apple-touch-icon.png','icon-192.png','icon-512.png'):
+              s=s.replace('"/'+name+'"', '"./'+name+'"')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: GitHub Pages beállítása
+        uses: actions/configure-pages@v5
+      - name: Tesztoldal csomagolása
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Tesztoldal publikálása
+        id: deployment
+        uses: actions/deploy-pages@v4
