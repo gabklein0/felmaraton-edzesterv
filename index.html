@@ -418,7 +418,7 @@ const {data:{session},error}=await supabase.auth.getSession();if(error)status('B
 supabase.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'||event==='USER_UPDATED')setTimeout(()=>{void authChanged(session)},0)});
 </script><script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script><script>
 (()=>{'use strict';
-const $=id=>document.getElementById(id),key='halfmarathon-custom-plans-v1';let entries=[];window.runningPlanHasCompletedEntries=()=>entries.some(e=>e.completed||e.actualKm||e.actualTime||e.actualHr||e.actualNotes);let activeCustomWeek=null;let customMode=false;let principlesText="";let loadedCloudPlanKey=null;let cloudAutoTimer=null;let cloudAutoPromise=Promise.resolve();let cloudAutoRevision=0;let localDraftDirty=false;
+const $=id=>document.getElementById(id),key='halfmarathon-custom-plans-v1';let entries=[];let activeCustomWeek=null;let customMode=false;let principlesText="";let loadedCloudPlanKey=null;let cloudAutoTimer=null;let cloudAutoPromise=Promise.resolve();let cloudAutoRevision=0;let localDraftDirty=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=(v,def=0)=>Number.isFinite(+v)?+v:def;
 const iso=(d)=>{const x=new Date(d+'T12:00:00');return Number.isNaN(x.getTime())?null:x};
@@ -1265,45 +1265,6 @@ function init(){
  const buttons={training:home,load:load,edit:edit};
  const words={hu:['Edzéstervem','Edzésterv betöltése','Edzésterv szerkesztése','Saját edzésterv készítése'],en:['My training plan','Load training plan','Edit training plan','Create a training plan'],fr:['Mon plan','Charger un plan','Modifier le plan','Créer un plan d’entraînement'],de:['Mein Trainingsplan','Trainingsplan laden','Trainingsplan bearbeiten','Trainingsplan erstellen']};
  let page='training';
- // The load/create form is a separate draft: never write its fields into the active plan.
- const metaIds=['plName','plStart','plWeeks','plRace','plGoal','plLong','plDays','plCurrent','plLoad'];
- const snapshot=()=>Object.fromEntries(metaIds.map(id=>[id,document.getElementById(id)?.value??'']));
- const applySnapshot=values=>{if(!values)return;for(const id of metaIds){const el=document.getElementById(id);if(el&&values[id]!==undefined)el.value=values[id]}};
- let activeMeta=snapshot(), loadDraft=null, creating=false;
- const datePlusDays=(date,days)=>{const d=new Date(date+'T12:00:00');if(!Number.isFinite(d.getTime()))return null;d.setDate(d.getDate()+days);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
- const dayDelta=(oldDate,newDate)=>Math.round((Date.parse(newDate+'T12:00:00')-Date.parse(oldDate+'T12:00:00'))/86400000);
- const msg={hu:{shift:'A kezdődátum változásával minden edzés dátuma eltolódik. Folytatod?',done:'A már teljesített edzésekhez futónaplóadatok tartozhatnak. A dátumuk módosítása veszélyeztetheti a naplót. Előbb készíts külön tervet, vagy hagyd változatlanul a kezdődátumot.',invalid:'Érvénytelen kezdődátum.',draft:'Az új terv adatai külön előkészítő adatok; nem módosítják az aktív edzéstervet.'},en:{shift:'Move every workout date to match the new start date?',done:'Completed workouts may contain journal data. Do not shift their dates; create a separate plan instead.',invalid:'Invalid start date.',draft:'New-plan settings are a separate draft and do not change the active plan.'},fr:{shift:'Décaler toutes les séances selon la nouvelle date de début ?',done:'Les séances terminées peuvent contenir un journal. Créez plutôt un plan distinct.',invalid:'Date de début invalide.',draft:'Les paramètres du nouveau plan ne modifient pas le plan actif.'},de:{shift:'Alle Trainingstermine auf den neuen Start verschieben?',done:'Abgeschlossene Trainings können Tagebuchdaten enthalten. Erstelle stattdessen einen separaten Plan.',invalid:'Ungültiges Startdatum.',draft:'Neue Planeinstellungen ändern den aktiven Plan nicht.'}};
- const t=k=>(msg[document.getElementById('appLanguage')?.value]||msg.hu)[k];
- const activeEntries=()=>{try{return JSON.parse(localStorage.getItem('running-custom-plan-v1')||'null')}catch(_){return null}};
- planner.addEventListener('input',event=>{if(page==='load'&&metaIds.includes(event.target.id)){event.stopImmediatePropagation()}},true);
- planner.addEventListener('change',event=>{
-  if(!metaIds.includes(event.target.id))return;
-  if(page==='load'){
-   loadDraft=snapshot();event.stopImmediatePropagation();
-   const status=document.getElementById('plStatus');if(status)status.textContent=t('draft');
-   return;
-  }
-  if(page!=='edit')return;
-  if(event.target.id==='plStart'&&activeMeta.plStart&&activeMeta.plStart!==event.target.value){
-   const next=event.target.value,delta=dayDelta(activeMeta.plStart,next);
-   if(!next||!Number.isFinite(delta)){event.target.value=activeMeta.plStart;alert(t('invalid'));event.stopImmediatePropagation();return}
-   const entriesRoot=document.getElementById('plRows');
-   const hasCompleted=[...document.querySelectorAll('#customPanels input[type="checkbox"]')].some(x=>x.checked);
-   // Completed sessions can be identified in the editor's underlying data through the plan cache.
-   const cache=(()=>{try{const matches=Object.keys(localStorage).filter(k=>k.includes('custom')&&k.includes('plan'));return matches.map(k=>JSON.parse(localStorage.getItem(k))).find(o=>Array.isArray(o?.entries))}catch(_){return null}})();
-   if(window.runningPlanHasCompletedEntries?.()||hasCompleted||cache?.entries?.some(e=>e.completed)){
-    event.target.value=activeMeta.plStart;alert(t('done'));event.stopImmediatePropagation();return;
-   }
-   if(!confirm(t('shift'))){event.target.value=activeMeta.plStart;event.stopImmediatePropagation();return}
-   // Adjust dates through the existing editable date controls, so the application's own
-   // entry-change handlers update its internal array and the grouped week view.
-   const dateFields=[...entriesRoot.querySelectorAll('input[data-f="date"]')];
-   if(dateFields.length){for(const field of dateFields){const shifted=datePlusDays(field.value,delta);if(shifted){field.value=shifted;field.dispatchEvent(new Event('change',{bubbles:true}))}}}
-   else {event.target.value=activeMeta.plStart;alert(t('invalid'));event.stopImmediatePropagation();return}
-  }
-  activeMeta=snapshot();
- },true);
-
  let toolbar=document.getElementById('plannerEditToolbar');
  if(!toolbar){toolbar=document.createElement('div');toolbar.id='plannerEditToolbar';const title=document.createElement('h3');title.id='plannerEditHeading';toolbar.appendChild(title);const rows=document.getElementById('plRows');if(rows&&rows.parentNode===planner){planner.insertBefore(toolbar,rows)}else{planner.appendChild(toolbar)}}
  const save=document.getElementById('plSaveUnified');if(save&&!toolbar.contains(save))toolbar.appendChild(save);
@@ -1311,23 +1272,15 @@ function init(){
  function translate(){const lang=window.trainingLanguage||document.getElementById('appLanguage')?.value||'hu',w=words[lang]||words.hu;
  for(const [key,i] of [['training',0],['load',1],['edit',2]]){const span=buttons[key].querySelector('span');if(span)span.textContent=w[i]}
  const title=document.getElementById('plannerEditHeading');if(title)title.textContent=w[2];heading.textContent=page==='edit'?w[2]:w[3];}
- function show(next,scroll=true){if(!buttons[next])next='training';
-  if(page==='edit')activeMeta=snapshot();
-  if(page==='load'){
-   if(creating){creating=false;activeMeta=snapshot();loadDraft=null}
-   else {loadDraft=snapshot();applySnapshot(activeMeta)}
-  }
-  if(next==='load'&&page!=='load'){loadDraft=loadDraft||snapshot();applySnapshot(loadDraft)}
-  if(next==='edit'&&page!=='load')applySnapshot(activeMeta);
-  page=next;
+ function show(next,scroll=true){if(!buttons[next])next='training';page=next;
  document.body.classList.toggle('planner-page',next!=='training');document.body.classList.toggle('planner-edit-page',next==='edit');
  if(next!=='training')planner.open=true;
  for(const [key,button] of Object.entries(buttons)){if(key===next)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')}
  translate();if(scroll)window.scrollTo({top:0,behavior:'smooth'});}
  for(const [key,button] of Object.entries(buttons))button.addEventListener('click',e=>{e.preventDefault();show(key)});
  document.getElementById('appLanguage')?.addEventListener('change',()=>setTimeout(translate,0));
- for(const id of ['plNew','plSuggest'])document.getElementById(id)?.addEventListener('click',()=>{creating=true;setTimeout(()=>show('edit'),180)});
- document.getElementById('plCloudLoad')?.addEventListener('click',()=>{creating=true;setTimeout(()=>show('edit'),900)});
+ for(const id of ['plNew','plSuggest'])document.getElementById(id)?.addEventListener('click',()=>setTimeout(()=>show('edit'),150));
+ document.getElementById('plCloudLoad')?.addEventListener('click',()=>setTimeout(()=>show('edit'),900));
  planner.addEventListener('toggle',()=>{if(page!=='training'&&!planner.open)planner.open=true});
  show('training',false);
  window.runningAppNavigate=show;
