@@ -928,6 +928,11 @@ async function finishCloudAutoSave(){
 function stopCloudAutosave(){
  clearTimeout(cloudAutoTimer);cloudAutoTimer=null;cloudAutoRevision++;
 }
+function showPlanSavedConfirmation(){
+ const lang=document.getElementById('appLanguage')?.value||'hu';
+ const messages={hu:'Az edzésterv sikeresen mentve a felhőbe.',en:'Training plan successfully saved to the cloud.',fr:'Le plan d’entraînement a bien été enregistré dans le cloud.',de:'Trainingsplan erfolgreich in der Cloud gespeichert.'};
+ window.alert(messages[lang]||messages.hu);
+}
 async function cloudSave(){
  if(!loadedCloudPlanKey){status('Nincs betöltött felhőterv. Új tervhez az „Új terv mentése” gombot használd.');return}
  const planKey=loadedCloudPlanKey;
@@ -944,6 +949,7 @@ async function cloudSave(){
   unsavedAiDraft=false;localDraftDirty=false;
   await cloudList(planKey);
   status('A meglévő edzésterv frissítve a felhőben.');
+  showPlanSavedConfirmation();
  }catch(e){status('Felhőmentési hiba: '+e.message)}
 }
 $('plNew').addEventListener('click',async()=>{
@@ -971,6 +977,7 @@ async function createCloudPlan(){
   loadedCloudPlanKey=planKey;currentProgressUser=session.user.id;unsavedAiDraft=false;localDraftDirty=false;rememberLastPlan(session.user.id,planKey);
   customMode=true;activeCustomWeek=0;renderCustom();
   await cloudList(planKey);status('Új edzésterv létrehozva és mentve a felhőben.');
+  showPlanSavedConfirmation();
  }catch(e){status('Új terv mentése sikertelen: '+e.message)}finally{btn.disabled=false}
 }
 $('plClear').addEventListener('click',async()=>{
@@ -1306,7 +1313,7 @@ function init(){
  for(const [key,button] of Object.entries(buttons))button.addEventListener('click',e=>{e.preventDefault();show(key)});
  document.getElementById('appLanguage')?.addEventListener('change',()=>setTimeout(translate,0));
  document.getElementById('plSuggest')?.addEventListener('click',()=>setTimeout(()=>show('edit'),150));
- document.getElementById('plNew')?.addEventListener('click',()=>setTimeout(()=>show('load'),150));
+ // The manual-plan handler navigates to edit after initialization; do not override it with a delayed load navigation.
  document.getElementById('plCloudLoad')?.addEventListener('click',()=>setTimeout(()=>show('edit'),900));
  planner.addEventListener('toggle',()=>{if(page!=='training'&&!planner.open)planner.open=true});
  show('training',false);
