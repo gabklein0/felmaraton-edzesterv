@@ -1,5 +1,15 @@
 # Running App Budapest
 
+## 🧪 Tesztverzió – GitHub Pages
+
+**[🧪 Running App tesztverzió megnyitása](https://gabklein0.github.io/felmaraton-edzesterv/)**
+
+A tesztoldal a GitHub `main` ágának módosításakor automatikusan frissül, miután a **Settings → Pages → Build and deployment → Source: GitHub Actions** beállítás engedélyezve van.
+
+A GitHub Pages statikus tesztkörnyezet: a Netlify Functions végpontok nem futnak rajta, ezért az AI és más szerveroldali funkciók itt korlátozottak lehetnek. A tesztoldalon ne használj éles adatokat vagy titkos kulcsokat.
+
+---
+
 ## 🚀 Élesítés Netlify-ra
 
 **[🚀 Running App élesítése – GitHub Actions](https://github.com/gabklein0/felmaraton-edzesterv/actions/workflows/manual-netlify-deploy.yml)**
