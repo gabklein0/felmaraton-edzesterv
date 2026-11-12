@@ -710,7 +710,6 @@ function updateCustomSummary(){
  const fmt=n=>n.toLocaleString('hu-HU',{maximumFractionDigits:1});
  $('weeklyBars').innerHTML=planned.map((p,i)=>`<div class="bar-column"><div class="combined-label"><span class="plan-label">${fmt(p)} km</span><span class="actual-label">${fmt(actual[i])} km</span></div><div class="combined-track"><div class="combined-plan" style="height:${p/max*100}%"></div><div class="combined-actual" style="height:${actual[i]/max*100}%"></div></div><span>${i+1}. hét</span></div>`).join('');
  const chart=$('combinedLineChart');
- const chart=$('combinedLineChart');
  chart.innerHTML=runningTrendCharts(pacePoints,hrPoints,entries.length);
 }
 function updateHero(){
