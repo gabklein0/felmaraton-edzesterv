@@ -852,6 +852,8 @@ const workoutStatusCopy={
  fr:{done:'Terminé',partial:'Incomplet',empty:'Non terminé'},
  de:{done:'Abgeschlossen',partial:'Unvollständig',empty:'Nicht abgeschlossen'}
 };
+function refreshWorkoutStatusLanguage(){document.querySelectorAll('#customPanels .workout-completion-status').forEach((node,i)=>{const visibleEntries=entries.filter(e=>{const article=node.closest('article.session');return article&&article.querySelector('h3')?.textContent?.startsWith(e.date+' · '+e.name+' ·')});if(visibleEntries.length)paintWorkoutStatus(node,visibleEntries[0])})}
+window.refreshWorkoutStatusLanguage=refreshWorkoutStatusLanguage;
 function workoutStatus(e){
  if(workoutHasResults(e))return 'done';
  return 'empty';
@@ -1636,12 +1638,12 @@ function apply(){if(updating)return;updating=true;
 async function setLanguage(lang){
  lang=langs.includes(lang)?lang:'hu';const requestId=++revision;window.trainingLanguage=lang;const translationStatus=document.getElementById('translationStatus');if(translationStatus)translationStatus.textContent='';select.value=lang;localStorage.setItem('running-app-language',lang);
  // Synchronous built-in fallback keeps the UI usable offline or if a JSON file is missing.
- strings=fallback[lang]?.strings||{};principles=fallback[lang]?.principles||[];apply();window.refreshCloudUserLanguage?.();window.refreshPlannerStatusLanguage?.();
+ strings=fallback[lang]?.strings||{};principles=fallback[lang]?.principles||[];apply();window.refreshCloudUserLanguage?.();window.refreshPlannerStatusLanguage?.();window.refreshWorkoutStatusLanguage?.();
  if(observer)observer.disconnect();
  try{const res=await fetch('locales/'+lang+'.json',{cache:'no-cache'});if(!res.ok)throw Error('HTTP '+res.status);
   const data=await res.json();if(requestId!==revision)return;
   if(!data||data.language!==lang||typeof data.strings!=='object')throw Error('Invalid language file');
-  strings={...fallback[lang]?.strings,...data.strings};principles=Array.isArray(data.principles)?data.principles:[];apply();window.refreshCloudUserLanguage?.();window.refreshPlannerStatusLanguage?.();
+  strings={...fallback[lang]?.strings,...data.strings};principles=Array.isArray(data.principles)?data.principles:[];apply();window.refreshCloudUserLanguage?.();window.refreshPlannerStatusLanguage?.();window.refreshWorkoutStatusLanguage?.();
  }catch(e){console.warn('Language file unavailable, using built-in fallback:',e)}
  finally{if(requestId===revision&&observer)observer.observe(document.body,{subtree:true,childList:true})}
  // Language switching only updates UI; saved plan text is never translated.
