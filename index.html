@@ -459,6 +459,7 @@ window.refreshPlannerStatusLanguage=()=>{
   else if(opt.value&&opt.dataset.planName)opt.textContent=opt.dataset.planName+' · '+opt.dataset.planWeeks+' '+plannerTranslate('hét');
  }
 };
+let lastKnownStartDate=$('plStart').value;
 const getMeta=()=>({name:$('plName').value,start:$('plStart').value,weeks:+$('plWeeks').value,race:+$('plRace').value,goal:$('plGoal').value,long:+$('plLong').value,days:+$('plDays').value,current:+$('plCurrent').value,load:$('plLoad').value});
 function clearPlanMetadata(){
  // Empty defaults for a new plan and for accounts without saved cloud plans.
@@ -471,7 +472,7 @@ function clearPlanMetadata(){
   el.value='';
  });
 }
-function persist(){try{localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}));status('Helyi módosítás – felhőmentéshez nyomd meg az Edzésterv mentése gombot.');localDraftDirty=true;stopCloudAutosave()}catch(e){status('Nem sikerült menteni: '+e.message)}}
+function persist(){try{lastKnownStartDate=$('plStart').value;localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}));status('Helyi módosítás – felhőmentéshez nyomd meg az Edzésterv mentése gombot.');localDraftDirty=true;stopCloudAutosave()}catch(e){status('Nem sikerült menteni: '+e.message)}}
 const defaultWorkoutNames={hu:'Új edzés',en:'New workout',fr:'Nouvelle séance',de:'Neues Training'};
 function localizedWorkoutName(name){
  const lang=document.getElementById('appLanguage')?.value||'hu';
@@ -632,8 +633,38 @@ if(startDatePicker){
   });
 }
 $('plImportBtn').addEventListener('click',()=>$('plImport').click());$('plImport').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>500000)throw Error('A fájl túl nagy.');const o=JSON.parse(await file.text());if(!Array.isArray(o.entries)||o.entries.length>500)throw Error('Érvénytelen edzéslista.');const clean=o.entries.map(x=>({date:String(x.date||'').slice(0,10),name:String(x.name||'').slice(0,90),type:['easy','tempo','long','race','rest'].includes(x.type)?x.type:'easy',km:Math.max(0,Math.min(100,num(x.km))),pace:String(x.pace||'').slice(0,20),details:String(x.details||'').slice(0,2000)}));if(clean.some(x=>!iso(x.date)))throw Error('Hibás dátum.');if(!confirm('Az import felülírja a jelenlegi saját tervet. Folytatod?'))return;entries=clean;if(o.meta&&typeof o.meta==='object'){for(const [field,id] of Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'})){if(o.meta[field]!=null)$(id).value=String(o.meta[field])}}render();persist()}catch(err){status('Importálási hiba: '+err.message)}finally{e.target.value=''}});
-for(const id of ['plName','plStart','plWeeks','plRace','plGoal','plLong','plDays','plCurrent','plLoad'])$(id).addEventListener('change',persist);
-try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved){if(saved.meta)for(const [field,id] of Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'})){if(saved.meta[field]!=null)$(id).value=String(saved.meta[field])}if(Array.isArray(saved.entries))entries=saved.entries.filter(x=>x&&typeof x.date==='string').slice(0,500);principlesText=String(saved.principlesText||'');render();if(entries.length){customMode=true;activeCustomWeek=0;renderCustom()}status('Korábban mentett saját terv betöltve.')}}catch(e){status('A korábbi terv nem olvasható.')} 
+// Changing the plan start shifts every workout by the same number of calendar days.
+$('plStart').addEventListener('change',()=>{
+ const next=$('plStart').value,previous=lastKnownStartDate;
+ const valid=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&iso(d);
+ if(entries.length&&valid(previous)&&valid(next)&&previous!==next){
+  const offset=Math.round((iso(next)-iso(previous))/86400000);
+  if(offset){
+   const uid=currentProgressUser,plan=loadedCloudPlanKey;
+   const cacheKey=uid&&plan?progressKey(uid,plan):null;
+   const pendingKey=uid&&plan?progressPendingKey(uid,plan):null;
+   const cache=cacheKey?progressRead(cacheKey):null;
+   const pending=pendingKey?progressRead(pendingKey):null;
+   for(const e of entries){
+    const oldId=progressId(e);
+    const oldProgress=pending?.[oldId]||cache?.[oldId];
+    if(oldProgress)for(const field of progressFields)if(e[field]===undefined)e[field]=oldProgress[field];
+    const timer=progressTimers.get(oldId);
+    if(timer){clearTimeout(timer);progressTimers.delete(oldId)}
+    e.date=datePlus(e.date,offset);
+    if(cache&&pending&&(e.completed||oldProgress)){
+     const newId=progressId(e),snapshot=progressSnapshot(e);
+     cache[newId]=snapshot;pending[newId]=snapshot;
+    }
+   }
+   if(cache&&pending){progressWrite(cacheKey,cache);progressWrite(pendingKey,pending);void flushWorkoutProgress()}
+   render();if(customMode)renderCustom();
+  }
+ }
+ persist();
+});
+for(const id of ['plName','plWeeks','plRace','plGoal','plLong','plDays','plCurrent','plLoad'])$(id).addEventListener('change',persist);
+try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved){if(saved.meta)for(const [field,id] of Object.entries({name:'plName',start:'plStart',weeks:'plWeeks',race:'plRace',goal:'plGoal',long:'plLong',days:'plDays',current:'plCurrent',load:'plLoad'})){if(saved.meta[field]!=null)$(id).value=String(saved.meta[field])}if(Array.isArray(saved.entries))entries=saved.entries.filter(x=>x&&typeof x.date==='string').slice(0,500);principlesText=String(saved.principlesText||'');render();if(entries.length){customMode=true;activeCustomWeek=0;renderCustom()}lastKnownStartDate=$('plStart').value;status('Korábban mentett saját terv betöltve.')}}catch(e){status('A korábbi terv nem olvasható.')} 
 
 function updateCustomSummary(){
  const m=getMeta();
