@@ -923,7 +923,7 @@ async function flushWorkoutProgress(){
    const split=id.indexOf('|'),duration=journalDurationMinutes(v.actualTime);
    const km=Number(String(v.actualKm||'').replace(',','.'));
    const hr=Number(v.actualHr);
-   return {user_id:uid,workout_date:id.slice(0,split),workout_name:id.slice(split+1),completed:!!v.completed,distance_km:v.completed&&km>0&&km<=100?km:null,duration_minutes:v.completed?duration:null,average_heart_rate:v.completed&&hr>=30&&hr<=250?hr:null,notes:v.completed?String(v.actualNotes||'').slice(0,1000):''};
+   return {user_id:uid,workout_date:id.slice(0,split),workout_name:id.slice(split+1),completed:!!v.completed,distance_km:km>0&&km<=100?km:null,duration_minutes:duration!=null&&duration>0?duration:null,average_heart_rate:hr>=30&&hr<=250?hr:null,notes:String(v.actualNotes||'').slice(0,1000)};
   });
   const {error}=await client.from('workouts').upsert(rows,{onConflict:'user_id,workout_date,workout_name'});if(error)throw error;
   const now=progressRead(pendingKey);for(const [id,v] of items)if(JSON.stringify(now[id])===JSON.stringify(v))delete now[id];progressWrite(pendingKey,now);
