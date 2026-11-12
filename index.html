@@ -786,17 +786,16 @@ if(activeCustomWeek!==w)continue;const section=document.createElement('section')
  if(field==='actualKm'){
   const lang=document.getElementById('appLanguage')?.value||'hu';
   const words={
-   hu:{suggest:'Tervezett táv',accept:'Tervezett táv elfogadása',hint:'A tervezett táv csak elfogadás után számít tényleges teljesítésnek.'},
-   en:{suggest:'Planned distance',accept:'Accept planned distance',hint:'The planned distance counts as completed only after confirmation.'},
-   fr:{suggest:'Distance prévue',accept:'Valider la distance prévue',hint:'La distance prévue ne compte qu’après validation.'},
-   de:{suggest:'Geplante Distanz',accept:'Geplante Distanz bestätigen',hint:'Die geplante Distanz zählt erst nach Bestätigung.'}
+   hu:{accept:'Tervezett táv betöltése'},
+   en:{accept:'Load planned distance'},
+   fr:{accept:'Charger la distance prévue'},
+   de:{accept:'Geplante Distanz laden'}
   };const t=words[lang]||words.hu;
   const planned=Number(String(e.km??'').replace(',','.'));
   if(Number.isFinite(planned)&&planned>0){
    const action=document.createElement('button');action.type='button';action.className='secondary';action.textContent=t.accept+' ('+planned.toLocaleString(lang==='hu'?'hu-HU':'en-US',{maximumFractionDigits:2})+' km)';
    action.addEventListener('click',()=>{inp.value=String(planned);e.actualKm=inp.value;updateWorkoutCompletion(e);paintWorkoutStatus(completion,e);saveWorkoutProgress(e);updatePaceOutput();updateCustomSummary();const weekSummary=section.querySelector('.summary');if(weekSummary)weekSummary.textContent='Heti teljesítés: '+weekEntries.filter(item=>item.completed).length+' / '+weekEntries.length+' edzés'});
-   const note=document.createElement('p');note.className='small muted';note.textContent=t.hint;
-   log.append(action,note);
+   log.append(action);
   }
  }
 }article.append(log);section.append(article)}const done=weekEntries.filter(e=>e.completed).length;const summary=document.createElement('div');summary.className='summary';summary.textContent=`Heti teljesítés: ${done} / ${weekEntries.length} edzés`;section.append(summary);panels.append(section)}
@@ -851,7 +850,7 @@ function paintWorkoutStatus(node,e){
  const lang=document.getElementById('appLanguage')?.value||'hu';
  const state=workoutStatus(e),labels=workoutStatusCopy[lang]||workoutStatusCopy.hu;
  node.textContent=labels[state];
- node.style.color=state==='done'?'#f5b766':state==='partial'?'#f5b766':'#a9b8c8';
+ node.style.color=state==='done'?'#ffff00':state==='partial'?'#f5b766':'#a9b8c8';
 }
 const progressFields=['completed','actualKm','actualTime','actualHr','actualNotes'];
 const progressKey=(uid,plan)=>'running-workout-progress-v2:'+uid+':'+plan;
