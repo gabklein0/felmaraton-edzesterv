@@ -1,0 +1,44 @@
+name: Élesítés Netlify-ra
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Running App élesítése
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forráskód letöltése
+        uses: actions/checkout@v4
+
+      - name: Node.js beállítása
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Publikálandó fájlok előkészítése
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p publish
+          cp index.html publish/
+          for f in manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png; do
+            if [ -f "$f" ]; then cp "$f" publish/; fi
+          done
+          if [ -d locales ]; then cp -R locales publish/; fi
+
+      - name: Netlify éles deploy
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || (echo "Hiányzó NETLIFY_AUTH_TOKEN secret" && exit 1)
+          test -n "$NETLIFY_SITE_ID" || (echo "Hiányzó NETLIFY_SITE_ID secret" && exit 1)
+          npx --yes netlify-cli@latest deploy --prod --dir=publish --functions=netlify/functions --message="Manual GitHub Actions deployment"
