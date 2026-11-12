@@ -1388,6 +1388,25 @@ function setAIExtraRequired(enabled){for(const id of aiExtraFields){const field=
 function cancelAISetup(){if(!aiSetupPending)return;aiSetupPending=false;if(aiPreviousFields)for(const [id,value] of Object.entries(aiPreviousFields)){if($(id))$(id).value=value}aiPreviousFields=null;setAIExtraRequired(false);updateAIButton();window.runningAppNavigate?.('training')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aiSetupPending&&!document.querySelector('[role="dialog"]')){e.preventDefault();cancelAISetup()}});
 $('appLanguage')?.addEventListener('change',()=>setTimeout(updateAIButton,0));
+// Preliminary goal-time suggestion based on training volume, longest run and available weeks.
+// Without a recent race/time trial this is only an estimate, not a performance prediction.
+function suggestGoalFromTraining(){
+ const m=getMeta(),race=m.race,weeks=m.weeks,weekly=m.current,long=m.long;
+ if(![5,10,21.0975,42.195].includes(race)||!Number.isFinite(weekly)||!Number.isFinite(long)||!Number.isFinite(weeks))return null;
+ const baseline={5:7.0,10:7.1,21.0975:7.2,42.195:7.4}[race];
+ const volume=Math.max(-0.5,Math.min(0.65,Math.log(Math.max(5,weekly)/25)*0.34));
+ const endurance=Math.max(-0.4,Math.min(0.45,(long/Math.max(5,race)-0.5)*0.38));
+ const preparation=Math.max(0,Math.min(0.15,(weeks-4)*0.012));
+ const pace=Math.max(4.2,Math.min(9.5,baseline-volume-endurance-preparation));
+ const minutes=Math.round(race*pace/5)*5;
+ return {minutes,display:`${Math.floor(minutes/60)}:${String(minutes%60).padStart(2,'0')}`};
+}
+const goalSuggestionText={
+ hu:{title:'Előzetes célidőjavaslat',explain:'A heti kilométer, a leghosszabb futás és a felkészülési idő alapján becsült érték. Friss versenyeredmény nélkül bizonytalan; nem garantált eredmény.',accept:'OK = javaslat elfogadása. Mégse = a saját célidő megtartása vagy megadása.',own:'A saját célidőt add meg óó:pp formában, majd indítsd újra az AI-t.'},
+ en:{title:'Preliminary goal-time suggestion',explain:'Estimated from weekly distance, longest run and training weeks. Without a recent race result this is uncertain, not a guaranteed outcome.',accept:'OK = accept suggestion. Cancel = keep or enter your own goal time.',own:'Enter your own goal time as h:mm, then run AI again.'},
+ fr:{title:'Suggestion préliminaire de temps cible',explain:'Estimation selon le kilométrage hebdomadaire, la sortie longue et les semaines de préparation. Incertaine sans résultat récent.',accept:'OK = accepter. Annuler = conserver ou saisir votre objectif.',own:'Saisissez votre temps cible au format h:mm, puis relancez l’IA.'},
+ de:{title:'Vorläufiger Zielzeitvorschlag',explain:'Schätzung anhand der Wochenkilometer, des längsten Laufs und der Vorbereitungswochen. Ohne aktuelles Rennergebnis unsicher.',accept:'OK = Vorschlag übernehmen. Abbrechen = eigene Zielzeit behalten oder eingeben.',own:'Eigene Zielzeit im Format h:mm eingeben und KI erneut starten.'}
+};
 async function startAIPlanFlow(){
  if(aiGenerationBusy)return;
  if(!aiSetupPending){
@@ -1398,12 +1417,24 @@ async function startAIPlanFlow(){
   await window.appAlert((aiMessages[aiLanguage()]||aiMessages.hu).start);return;
  }
  try{
-  validateRequiredPlanFields();
+  const goalField=$('plGoal'),originalGoal=goalField.value;
+  // Validate all other required fields before proposing a goal.
+  if(!goalField.value.trim())goalField.value='1:50';
+  try{validateRequiredPlanFields()}finally{goalField.value=originalGoal}
   const long=Number($('plLong').value),current=Number($('plCurrent').value),load=$('plLoad').value;
   for(const [id,valid] of [['plLong',$('plLong').value.trim()!==''&&Number.isFinite(long)&&long>=2&&long<=42],['plCurrent',$('plCurrent').value.trim()!==''&&Number.isFinite(current)&&current>=5&&current<=160],['plLoad',Boolean(load)]]){
    $(id).setAttribute('aria-invalid',String(!valid));if(!valid){$(id).focus();throw Error('missing')}
   }
  }catch(e){await window.appAlert((aiMessages[aiLanguage()]||aiMessages.hu).missing);return}
+ const words=goalSuggestionText[aiLanguage()]||goalSuggestionText.hu;
+ const estimate=suggestGoalFromTraining();
+ if(estimate){
+  const own=$('plGoal').value.trim();
+  const accepted=await window.appConfirm(`${words.title}: ${estimate.display} (h:mm)\n\n${words.explain}\n\n${own?(''+own+' — '+words.accept):words.accept}`);
+  if(accepted){$('plGoal').value=estimate.display;$('plGoal').dispatchEvent(new Event('change',{bubbles:true}))}
+  else if(!/^\\d{1,3}:[0-5]\\d$/.test(own)){await window.appAlert(words.own);$('plGoal').focus();return}
+ }
+ try{validateRequiredPlanFields()}catch(e){await window.appAlert((aiMessages[aiLanguage()]||aiMessages.hu).missing);return}
  const success=await requestAI();
  if(success){aiSetupPending=false;aiPreviousFields=null;setAIExtraRequired(false);updateAIButton();window.runningAppNavigate?.('edit')}
 }
