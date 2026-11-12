@@ -18,10 +18,4 @@ A hivatkozás megnyitja a manuális élesítés oldalát. Az élesítés **nem i
 
 A GitHubon végzett módosítások önmagukban nem kerülnek ki az éles Netlify-oldalra, amennyiben a Netlify automatikus buildjei ki vannak kapcsolva.
 
-### Előfeltételek
 
-A repository **Settings → Secrets and variables → Actions** részében szükséges:
-- `NETLIFY_AUTH_TOKEN`
-- `NETLIFY_SITE_ID`
-
-Az élesítés eredményét az Actions futási naplójában ellenőrizheted.
