@@ -850,7 +850,7 @@ function paintWorkoutStatus(node,e){
  const lang=document.getElementById('appLanguage')?.value||'hu';
  const state=workoutStatus(e),labels=workoutStatusCopy[lang]||workoutStatusCopy.hu;
  node.textContent=labels[state];
- node.style.color=state==='done'?'#ffff00':state==='partial'?'#f5b766':'#a9b8c8';
+ node.style.color=state==='done'?'#F5DE8A':state==='partial'?'#f5b766':'#a9b8c8';
 }
 const progressFields=['completed','actualKm','actualTime','actualHr','actualNotes'];
 const progressKey=(uid,plan)=>'running-workout-progress-v2:'+uid+':'+plan;
