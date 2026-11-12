@@ -1279,26 +1279,37 @@ async function restoreLastPlanOnLogin(){
 $('reset').textContent='Aktuális terv teljesítéseinek törlése';
 $('reset').addEventListener('click',async event=>{
  event.preventDefault();event.stopImmediatePropagation();
- if(!loadedCloudPlanKey){alert('Előbb tölts be egy mentett edzéstervet. Más tervek adatait nem töröljük.');return}
+ if(!loadedCloudPlanKey){window.alert('Előbb tölts be egy mentett edzéstervet. Más tervek adatait nem töröljük.');return}
  const planKey=loadedCloudPlanKey;
  const name=getMeta().name||'Névtelen edzésterv';
- if(!await window.appConfirm('Csak az aktuális edzésterv ("'+name+'") teljesítési pipáit és futásnapló-adatait töröljük.\n\nAz edzésterv és minden másik terv változatlan marad. A művelet nem vonható vissza. Folytatod?'))return;
+ const confirmText='Csak az aktuális edzésterv ("'+name+'") teljesítési pipáit és futásnapló-adatait töröljük.\\n\\nAz edzésterv és minden másik terv változatlan marad. A művelet nem vonható vissza. Folytatod?'.replaceAll('\\n','\n');
+ const confirmed=typeof window.appConfirm==='function'?await window.appConfirm(confirmText):window.confirm(confirmText);
+ if(!confirmed)return;
  const btn=$('reset');btn.disabled=true;
+ const backup=JSON.parse(JSON.stringify(entries));
  try{
+  // Do not allow an older autosave to restore deleted results after the deletion.
   await finishCloudAutoSave();
   if(loadedCloudPlanKey!==planKey)throw Error('Időközben megváltozott az aktív terv.');
-  const backup=JSON.parse(JSON.stringify(entries));
-  for(const entry of entries){
-   entry.completed=false;
-   entry.actualKm='';entry.actualTime='';entry.actualHr='';entry.actualNotes='';
-  }
-  try{await saveLoadedPlan()}
-  catch(error){entries=backup;render();if(customMode)renderCustom();throw error}
+  stopCloudAutosave();
+  const cleaned=backup.map(entry=>({...entry,completed:false,actualKm:'',actualTime:'',actualHr:'',actualNotes:''}));
+  const {client,session}=await getCloudClient();
+  const payload={meta:getMeta(),entries:cleaned,principlesText};
+  const {data,error}=await client.from('training_plans').update({payload,updated_at:new Date().toISOString()}).eq('user_id',session.user.id).eq('plan_key',planKey).select('payload');
+  if(error)throw error;
+  if(!data?.length)throw Error('A terv törlése nem igazolható vissza a felhőből.');
+  if(data[0].payload?.entries?.some(e=>e.completed||e.actualKm||e.actualTime||e.actualHr||e.actualNotes))throw Error('A felhőben még maradt teljesítési adat.');
+  if(loadedCloudPlanKey!==planKey)throw Error('Időközben megváltozott az aktív terv.');
+  entries=cleaned;
+  localDraftDirty=false;
+  localStorage.setItem(key,JSON.stringify(payload));
   render();if(customMode)renderCustom();
-  localStorage.setItem(key,JSON.stringify({meta:getMeta(),entries,principlesText}));
-  status('Csak a(z) „'+name+'” terv teljesítései és naplóadatai törölve. A többi terv megmaradt.');
- }catch(error){status('A törlés nem sikerült: '+error.message);alert('A törlés nem sikerült: '+error.message)}
- finally{btn.disabled=false}
+  status('A(z) „'+name+'” terv teljesítései és naplóadatai végleg törölve. A többi terv megmaradt.');
+ }catch(error){
+  entries=backup;render();if(customMode)renderCustom();
+  status('A törlés nem sikerült: '+error.message);
+  window.alert('A törlés nem sikerült: '+error.message);
+ }finally{btn.disabled=false}
 },true);
 $('plCloudSave').addEventListener('click',()=>void cloudSave());
 $('plSaveUnified').addEventListener('click',()=>{if(loadedCloudPlanKey){$('plCloudSave').click()}else{void createCloudPlan()}});
