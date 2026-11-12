@@ -12,15 +12,12 @@ permissions:
 
 concurrency:
   group: github-pages-preview
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Tesztoldal frissítése
+  build:
+    name: Tesztoldal előkészítése
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Forráskód letöltése
         uses: actions/checkout@v4
@@ -49,6 +46,16 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+  publish:
+    name: Tesztoldal frissítése
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Tesztoldal publikálása
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
