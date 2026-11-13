@@ -50,7 +50,7 @@ export default async (request) => {
    };
    const invalid=(data)=>{
      if(!data||!Array.isArray(data.entries)||typeof data.principles!=='string')return 'Hiányzó entries tömb vagy principles szöveg.';
-     const validPace=v=>typeof v==='string'&&/^\\d{1,2}:[0-5]\\d$/.test(v)&&Number(v.split(':')[0])*60+Number(v.split(':')[1])>=180;
+     const validPace=v=>typeof v==='string'&&/^\d{1,2}:[0-5]\d$/.test(v)&&Number(v.split(':')[0])*60+Number(v.split(':')[1])>=180;
      const toSeconds=v=>Number(v.split(':')[0])*60+Number(v.split(':')[1]);
      if(data.entries.length!==expected)return `Az edzések száma ${data.entries.length}, elvárt ${expected}.`;
      const bad=data.entries.map((e,i)=>!e||typeof e.details!=='string'||e.details.trim().length<45||e.details.length>2000?i+1:null).filter(Boolean);
