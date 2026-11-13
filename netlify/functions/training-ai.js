@@ -27,7 +27,7 @@ export default async (request) => {
   if(!Number.isInteger(weeks)||weeks<2||weeks>16||![3,4].includes(days)||!Number.isFinite(race)||race<5||race>43||current<5||current>160||long<2||long>42||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(meta.start||''))return respond(400,{error:'Érvénytelen edzésterv-beállítások.'});
   // Each invocation generates at most two weeks. The browser combines chunks after all succeed.
   const chunkStart=Number(input.chunkStart??0),chunkWeeks=Number(input.chunkWeeks??weeks);
-  if(!Number.isInteger(chunkStart)||!Number.isInteger(chunkWeeks)||chunkStart<0||chunkWeeks<1||chunkWeeks>2||chunkStart+chunkWeeks>weeks)return respond(400,{error:'Érvénytelen AI tervrészlet.'});
+  if(!Number.isInteger(chunkStart)||!Number.isInteger(chunkWeeks)||chunkStart<0||chunkWeeks<1||chunkWeeks>4||chunkStart+chunkWeeks>weeks)return respond(400,{error:'Érvénytelen AI tervrészlet.'});
   const startDate=new Date(meta.start+'T12:00:00Z');
   if(Number.isNaN(startDate.getTime()))return respond(400,{error:'Érvénytelen kezdődátum.'});
   startDate.setUTCDate(startDate.getUTCDate()+chunkStart*7);
