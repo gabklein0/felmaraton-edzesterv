@@ -1541,10 +1541,10 @@ function suggestGoalFromTraining(){
  return {minutes,display:`${Math.floor(minutes/60)}:${String(minutes%60).padStart(2,'0')}`};
 }
 const goalSuggestionText={
- hu:{title:'Előzetes célidőjavaslat',explain:'A heti kilométer, a leghosszabb futás és a felkészülési idő alapján becsült érték. Friss versenyeredmény nélkül bizonytalan; nem garantált eredmény.',accept:'OK = javaslat elfogadása. Mégse = a saját célidő megtartása vagy megadása.',own:'A saját célidőt add meg óó:pp formában, majd indítsd újra az AI-t.'},
- en:{title:'Preliminary goal-time suggestion',explain:'Estimated from weekly distance, longest run and training weeks. Without a recent race result this is uncertain, not a guaranteed outcome.',accept:'OK = accept suggestion. Cancel = keep or enter your own goal time.',own:'Enter your own goal time as h:mm, then run AI again.'},
- fr:{title:'Suggestion préliminaire de temps cible',explain:'Estimation selon le kilométrage hebdomadaire, la sortie longue et les semaines de préparation. Incertaine sans résultat récent.',accept:'OK = accepter. Annuler = conserver ou saisir votre objectif.',own:'Saisissez votre temps cible au format h:mm, puis relancez l’IA.'},
- de:{title:'Vorläufiger Zielzeitvorschlag',explain:'Schätzung anhand der Wochenkilometer, des längsten Laufs und der Vorbereitungswochen. Ohne aktuelles Rennergebnis unsicher.',accept:'OK = Vorschlag übernehmen. Abbrechen = eigene Zielzeit behalten oder eingeben.',own:'Eigene Zielzeit im Format h:mm eingeben und KI erneut starten.'}
+ hu:{suggested:'A megadott edzésadatok alapján az AI által javasolt célidő:',ownLabel:'Az általad megadott célidő:',explain:'A javasolt célidő a jelenlegi heti futástáv, a leghosszabb futás és a felkészülési idő alapján készült becslés.',question:'Biztosan a saját, {time}-ös célidőddel szeretnéd elkészíteni az edzéstervet?',own:'A saját célidőt add meg óó:pp formában, majd indítsd újra az AI-t.'},
+ en:{suggested:'AI-suggested target time based on your training data:',ownLabel:'Your entered target time:',explain:'The suggestion is an estimate based on your current weekly distance, longest run and available preparation time.',question:'Are you sure you want to create the training plan using your own target time of {time}?',own:'Enter your own goal time as h:mm, then run AI again.'},
+ fr:{suggested:'Temps cible proposé par l’IA selon vos données d’entraînement :',ownLabel:'Votre temps cible saisi :',explain:'Cette suggestion est une estimation fondée sur votre kilométrage hebdomadaire, votre sortie la plus longue et votre durée de préparation.',question:'Voulez-vous vraiment créer le plan avec votre propre objectif de {time} ?',own:'Saisissez votre temps cible au format h:mm, puis relancez l’IA.'},
+ de:{suggested:'Von der KI anhand deiner Trainingsdaten vorgeschlagene Zielzeit:',ownLabel:'Deine eingegebene Zielzeit:',explain:'Der Vorschlag ist eine Schätzung auf Grundlage deines Wochenumfangs, deines längsten Laufs und deiner Vorbereitungszeit.',question:'Möchtest du den Trainingsplan wirklich mit deiner eigenen Zielzeit von {time} erstellen?',own:'Eigene Zielzeit im Format h:mm eingeben und KI erneut starten.'}
 };
 function aiFieldError(e){
  const active=document.activeElement;
@@ -1576,9 +1576,9 @@ async function startAIPlanFlow(){
  const estimate=suggestGoalFromTraining();
  if(estimate){
   const own=$('plGoal').value.trim();
-  const accepted=await window.appConfirm(`${words.title}: ${estimate.display} (h:mm)\n\n${words.explain}\n\n${own?(''+own+' — '+words.accept):words.accept}`);
-  if(accepted){$('plGoal').value=estimate.display;$('plGoal').dispatchEvent(new Event('change',{bubbles:true}))}
-  else if(!/^\d{1,3}:[0-5]\d$/.test(own)){await window.appAlert(words.own);$('plGoal').focus();return}
+  if(!/^\d{1,3}:[0-5]\d$/.test(own)){await window.appAlert(words.own);$('plGoal').focus();return}
+  const keepOwn=await window.appConfirm(`${words.suggested} ${estimate.display}\n\n${words.ownLabel} ${own}\n\n${words.explain}\n\n${words.question.replace('{time}',own)}`);
+  if(!keepOwn){$('plGoal').value=estimate.display;$('plGoal').dispatchEvent(new Event('change',{bubbles:true}))}
  }
  try{validateRequiredPlanFields()}catch(e){await window.appAlert(aiFieldError(e));return}
  const success=await requestAI();
