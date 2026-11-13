@@ -436,7 +436,7 @@ facebookAuthTranslate();document.getElementById('appLanguage')?.addEventListener
 $('cloudFacebookSignIn').addEventListener('click',async()=>{
  const button=$('cloudFacebookSignIn'),t=facebookAuthTexts[document.getElementById('appLanguage')?.value]||facebookAuthTexts.hu;
  button.disabled=true;status(t.wait);
- try{const {error}=await supabase.auth.signInWithOAuth({provider:'facebook',options:{redirectTo:window.location.origin+window.location.pathname,scopes:'email,public_profile'}});if(error)throw error}
+ try{const {error}=await supabase.auth.signInWithOAuth({provider:'facebook',options:{redirectTo:window.location.origin+window.location.pathname}});if(error)throw error}
  catch(e){status(t.error+(e?.message||String(e)));button.disabled=false}
 });
 function googleAuthTranslate(){const t=googleAuthTexts[document.getElementById('appLanguage')?.value]||googleAuthTexts.hu;$('googleAuthLabel').textContent=t.label;$('googleAuthOr').textContent=t.or}
