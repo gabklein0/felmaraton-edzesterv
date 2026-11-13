@@ -1207,7 +1207,7 @@ function cancelManualSetup(){
  continueManual.classList.remove('manual-ready');
  continueManual.removeAttribute('aria-label');
  translateManual();
- window.runningAppNavigate?.('training');
+ window.runningAppNavigate?.('load');
  continueManual.focus();
 }
 document.addEventListener('keydown',e=>{
@@ -1524,7 +1524,7 @@ const aiMessages={hu:{start:'Az AI-edzésterv elkészítéséhez töltsd ki az �
 function aiLanguage(){return $('appLanguage')?.value||'hu'}
 function updateAIButton(){const btn=$('plSuggest');btn.textContent=aiSetupPending?(aiLabels[aiLanguage()]||aiLabels.hu):(aiOriginalLabels[aiLanguage()]||aiOriginalLabels.hu);btn.classList.toggle('ai-run-orange',aiSetupPending)}
 function setAIExtraRequired(enabled){for(const id of aiExtraFields){const field=$(id),label=field?.closest('.planner-grid label');if(!field||!label)continue;let caption=label.querySelector('.field-caption');if(!caption){caption=document.createElement('span');caption.className='field-caption';for(const node of [...label.childNodes]){if(node===field||node.nodeType===1&&node.contains(field))break;caption.appendChild(node)}label.insertBefore(caption,label.firstChild)}let star=caption.querySelector('.ai-required-star');if(enabled&&!star){star=document.createElement('span');star.className='required-star ai-required-star';star.textContent='*';star.setAttribute('aria-hidden','true');caption.insertBefore(star,caption.firstChild)}if(!enabled&&star)star.remove();field.required=enabled; if(!enabled)field.removeAttribute('aria-invalid')}}
-function cancelAISetup(){if(!aiSetupPending)return;aiSetupPending=false;if(aiPreviousFields)for(const [id,value] of Object.entries(aiPreviousFields)){if($(id))$(id).value=value}aiPreviousFields=null;setAIExtraRequired(false);updateAIButton();window.runningAppNavigate?.('training')}
+function cancelAISetup(){if(!aiSetupPending)return;aiSetupPending=false;if(aiPreviousFields)for(const [id,value] of Object.entries(aiPreviousFields)){if($(id))$(id).value=value}aiPreviousFields=null;setAIExtraRequired(false);updateAIButton();window.runningAppNavigate?.('load')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aiSetupPending&&!document.querySelector('[role="dialog"]')){e.preventDefault();cancelAISetup()}});
 $('appLanguage')?.addEventListener('change',()=>setTimeout(updateAIButton,0));
 // Preliminary goal-time suggestion based on training volume, longest run and available weeks.
