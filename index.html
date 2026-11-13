@@ -1546,6 +1546,13 @@ const goalSuggestionText={
  fr:{title:'Suggestion préliminaire de temps cible',explain:'Estimation selon le kilométrage hebdomadaire, la sortie longue et les semaines de préparation. Incertaine sans résultat récent.',accept:'OK = accepter. Annuler = conserver ou saisir votre objectif.',own:'Saisissez votre temps cible au format h:mm, puis relancez l’IA.'},
  de:{title:'Vorläufiger Zielzeitvorschlag',explain:'Schätzung anhand der Wochenkilometer, des längsten Laufs und der Vorbereitungswochen. Ohne aktuelles Rennergebnis unsicher.',accept:'OK = Vorschlag übernehmen. Abbrechen = eigene Zielzeit behalten oder eingeben.',own:'Eigene Zielzeit im Format h:mm eingeben und KI erneut starten.'}
 };
+function aiFieldError(e){
+ const active=document.activeElement;
+ const id=active?.id;
+ const names={plLong:'Leghosszabb közelmúltbeli futás (2–42 km)',plCurrent:'Heti jelenlegi kilométer (5–160 km)',plLoad:'Terhelés'};
+ const label=names[id]||active?.closest?.('label')?.querySelector('.field-caption')?.textContent?.trim()||active?.closest?.('label')?.textContent?.trim();
+ return (aiMessages[aiLanguage()]||aiMessages.hu).missing+(label?'\n\n'+label:'')+(e?.message&&e.message!=='missing'?'\n'+e.message:'');
+}
 async function startAIPlanFlow(){
  if(aiGenerationBusy)return;
  if(!aiSetupPending){
@@ -1564,16 +1571,16 @@ async function startAIPlanFlow(){
   for(const [id,valid] of [['plLong',$('plLong').value.trim()!==''&&Number.isFinite(long)&&long>=2&&long<=42],['plCurrent',$('plCurrent').value.trim()!==''&&Number.isFinite(current)&&current>=5&&current<=160],['plLoad',Boolean(load)]]){
    $(id).setAttribute('aria-invalid',String(!valid));if(!valid){$(id).focus();throw Error('missing')}
   }
- }catch(e){await window.appAlert((aiMessages[aiLanguage()]||aiMessages.hu).missing);return}
+ }catch(e){await window.appAlert(aiFieldError(e));return}
  const words=goalSuggestionText[aiLanguage()]||goalSuggestionText.hu;
  const estimate=suggestGoalFromTraining();
  if(estimate){
   const own=$('plGoal').value.trim();
   const accepted=await window.appConfirm(`${words.title}: ${estimate.display} (h:mm)\n\n${words.explain}\n\n${own?(''+own+' — '+words.accept):words.accept}`);
   if(accepted){$('plGoal').value=estimate.display;$('plGoal').dispatchEvent(new Event('change',{bubbles:true}))}
-  else if(!/^\\d{1,3}:[0-5]\\d$/.test(own)){await window.appAlert(words.own);$('plGoal').focus();return}
+  else if(!/^\d{1,3}:[0-5]\d$/.test(own)){await window.appAlert(words.own);$('plGoal').focus();return}
  }
- try{validateRequiredPlanFields()}catch(e){await window.appAlert((aiMessages[aiLanguage()]||aiMessages.hu).missing);return}
+ try{validateRequiredPlanFields()}catch(e){await window.appAlert(aiFieldError(e));return}
  const success=await requestAI();
  if(success){aiSetupPending=false;aiPreviousFields=null;setAIExtraRequired(false);updateAIButton();window.runningAppNavigate?.('edit')}
 }
