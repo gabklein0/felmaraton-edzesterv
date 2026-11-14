@@ -306,28 +306,31 @@ body.planner-new-page #plSaveUnified{display:inline-flex!important}
 #plNew.manual-ready:hover{background:#c8751d!important}
 #plSuggest.ai-run-orange{background:#df8427!important;border:1px solid #f0ae5e!important;color:#fff!important}
 #plSuggest.ai-run-orange:hover{background:#c8751d!important}</style><style id="planner-fields-alignment-fix">
-/* Align all nine plan controls on a common row baseline, including custom steppers. */
-#customPlanner .planner-grid > label { min-width:0; justify-content:flex-start; }
-#customPlanner .planner-grid > label > .field-caption { display:block; min-height:18px; line-height:18px; }
-#customPlanner .planner-grid > label > input,
-#customPlanner .planner-grid > label > select,
-#customPlanner .planner-grid > label > .goal-time-step-field,
-#customPlanner .planner-grid > label > .distance-step-field { box-sizing:border-box; height:52px; min-height:52px; margin-top:0!important; }
-#customPlanner .planner-grid > label > .goal-time-step-field input,
-#customPlanner .planner-grid > label > .distance-step-field input { height:100%; min-height:0; }
-@media(max-width:760px){
- #customPlanner .planner-grid > label > input,
- #customPlanner .planner-grid > label > select { height:52px!important; min-height:52px!important; }
+/* Align controls at the bottom of each grid row, regardless of caption length. */
+#customPlanner .planner-grid { align-items: stretch; gap: 14px; }
+#customPlanner .planner-grid > label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 6px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
 }
-</style><style id="tablet-planner-form-alignment">
-/* Consistent form rows on tablets, including iPad Safari native controls. */
-#customPlanner .planner-grid{align-items:stretch;column-gap:14px;row-gap:14px}
-#customPlanner .planner-grid>label{display:flex;flex-direction:column;min-width:0;gap:6px;justify-content:flex-start}
-#customPlanner .planner-grid>label>.field-caption{display:block;min-height:36px;line-height:18px;overflow-wrap:anywhere}
-#customPlanner .planner-grid>label>input,
-#customPlanner .planner-grid>label>select,
-#customPlanner .planner-grid>label>.goal-time-step-field,
-#customPlanner .planner-grid>label>.distance-step-field{width:100%;max-width:100%;min-width:0;box-sizing:border-box;height:52px;min-height:52px;margin-top:0}
+#customPlanner .planner-grid > label > .field-caption { display: block; }
+#customPlanner .planner-grid > label > :is(input, select, .goal-time-step-field, .distance-step-field),
+#customPlanner .planner-grid #plStart {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 52px;
+  min-height: 52px;
+  margin-top: auto !important;
+}
+#customPlanner .planner-grid > label > :is(.goal-time-step-field, .distance-step-field) input {
+  height: 100%;
+  min-height: 0;
+}
 @media (min-width:601px) and (max-width:1199px), (min-width:601px) and (max-width:1400px) and (pointer:coarse){
  #customPlanner .planner-grid,
  #customPlanner #plRows .planner-row-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
@@ -335,7 +338,6 @@ body.planner-new-page #plSaveUnified{display:inline-flex!important}
 }
 @media (max-width:600px){
  #customPlanner .planner-grid{grid-template-columns:minmax(0,1fr)}
- #customPlanner .planner-grid>label>.field-caption{min-height:18px}
 }
 </style><script id="theme-preference">
 try {
@@ -2347,7 +2349,6 @@ body.session-locked .wrap { max-width: 600px; }
 [data-running-theme] button:disabled { opacity: .65; }
 [data-running-theme] :is(.app-page-nav, .tabs) button { min-height: 48px; white-space: normal; overflow-wrap: anywhere; }
 [data-running-theme] .planner-grid > label { display: flex; flex-direction: column; min-width: 0; }
-[data-running-theme] .planner-grid > label > :last-child { margin-top: auto; }
 [data-running-theme] .theme-training-layout { display: flow-root; }
 [data-running-theme] .theme-training-layout > * { min-width: 0; }
 [data-running-theme] .theme-training-layout .tabs { margin-top: 0; }
