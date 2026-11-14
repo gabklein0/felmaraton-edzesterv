@@ -2163,16 +2163,16 @@ body::after {
   grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
   align-items: center;
   gap: 8px 16px;
-  padding: 12px;
+  padding: 2px 12px;
   margin-bottom: 14px;
   border: 1px solid var(--line, #40596d);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--surface, #152534);
 }
 .cloud .theme-control label {
   margin: 0;
   color: var(--ink, #eaf0f8);
-  font-weight: 650;
+  font-weight: 700;
 }
 .cloud .theme-control #appTheme {
   appearance: none;
@@ -2223,7 +2223,7 @@ body::after {
   margin-inline-start: 6px;
 }
 @media (max-width: 540px) {
-  .cloud .theme-control { grid-template-columns: minmax(0, 1fr); }
+  .cloud .theme-control { grid-template-columns: minmax(0, 1fr); padding-block: 8px; }
 }
 #nextWorkout { display: none; }
 
