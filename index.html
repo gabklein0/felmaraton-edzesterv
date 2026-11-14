@@ -109,9 +109,9 @@ header .eyebrow{font-size:clamp(18px,3vw,24px);line-height:1.25;margin-bottom:22
 </style><style id="language-selector-fixed-position">/* Anchor to the closed account header, not to the expanding panel height. */
 .cloud .language-switch{top:35px!important;transform:translateY(-50%)!important;}
 @media(max-width:520px){.cloud .language-switch{top:35px!important;}}
-body.session-locked .wrap > :not(.cloud){display:none!important}
+body.session-locked .wrap > :not(.cloud, .running-app-header){display:none!important}
 </style><style id="running-app-brand-style">
-.running-app-header{display:flex;align-items:center;justify-content:center;gap:10px;width:max-content;max-width:100%;margin:4px auto 18px;padding:10px 22px;border:1px solid rgba(91,177,151,.45);border-radius:999px;background:linear-gradient(110deg,rgba(40,99,83,.30),rgba(30,64,78,.18));color:#e3f7ed;font-size:clamp(17px,2.2vw,23px);font-weight:800;letter-spacing:.11em;text-transform:uppercase;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.12)}.running-app-header-mark{font-size:26px;line-height:1;color:#a9e5ca}body.session-locked .wrap > .running-app-header{display:flex!important}
+.wrap > #refreshAppHeader{display:flex;align-items:center;justify-content:center;gap:10px;width:max-content;max-width:100%;margin:4px auto 18px;flex-wrap:wrap;padding:10px 22px;border:1px solid rgba(91,177,151,.45);border-radius:999px;background:linear-gradient(110deg,rgba(40,99,83,.30),rgba(30,64,78,.18));color:#e3f7ed;font-size:clamp(17px,2.2vw,23px);font-weight:800;letter-spacing:.11em;text-transform:uppercase;text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.12)}.running-app-header-mark{font-size:26px;line-height:1;color:#a9e5ca}
 </style><style id="mobile-viewport-planner-fix">
 /* iOS Safari zooms the page when focusing controls with fonts below 16px. */
 @media (max-width: 760px) {
@@ -2333,12 +2333,12 @@ body.session-locked .wrap { max-width: 600px; }
 [data-running-theme] :is(.legend-plan, .bar-fill.planned, .combined-plan) { background: var(--planned) !important; }
 [data-running-theme] .actual-label { color: var(--accent) !important; }
 [data-running-theme] .plan-label { color: var(--muted) !important; }
-[data-running-theme] .running-app-header {
+[data-running-theme] .wrap > #refreshAppHeader {
   background: var(--raised);
   border-color: var(--line);
   color: var(--ink);
 }
-[data-running-theme] .running-app-header:hover { border-color: var(--accent); }
+[data-running-theme] .wrap > #refreshAppHeader:hover { border-color: var(--accent); }
 [data-running-theme] .cloud .language-switch #appLanguage { color: var(--ink) !important; }
 [data-running-theme="cobalt"] .cloud .language-switch #appLanguage { appearance: auto; background-image: none !important; padding-right: 0 !important; }
 [data-running-theme] :is(button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 3px; }
