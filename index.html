@@ -154,47 +154,44 @@ body.session-locked .wrap > :not(.cloud, .running-app-header){display:none!impor
   }
 }
 </style><style id="ios-date-native-overflow-fix">
-/* iOS WebKit date controls can keep an intrinsic minimum width even in a CSS grid. */
-@media (max-width:760px) {
-  .planner .planner-grid > label:has(> #plStart),
-  #plRows .planner-row-fields > label:has(> input[data-f="date"]) {
-    display:flex!important;
-    flex-direction:column!important;
-    min-width:0!important;
-    width:100%!important;
-    max-width:100%!important;
-    overflow:hidden!important;
-    box-sizing:border-box!important;
-  }
-  .planner #plStart[type="date"],
-  #plRows input[data-f="date"][type="date"] {
-    -webkit-appearance:none!important;
-    appearance:none!important;
-    display:block!important;
-    flex:0 1 auto!important;
-    box-sizing:border-box!important;
-    width:100%!important;
-    min-width:0!important;
-    max-width:100%!important;
-    margin:0!important;
-    padding:10px 12px!important;
-    font-size:16px!important;
-    line-height:24px!important;
-    text-align:left!important;
-    overflow:hidden!important;
-  }
-  .planner #plStart[type="date"]::-webkit-date-and-time-value,
-  #plRows input[data-f="date"][type="date"]::-webkit-date-and-time-value {
-    min-width:0!important;
-    width:100%!important;
-    text-align:left!important;
-  }
-  .planner #plStart[type="date"]::-webkit-datetime-edit,
-  #plRows input[data-f="date"][type="date"]::-webkit-datetime-edit {
-    min-width:0!important;
-    max-width:100%!important;
-    padding:0!important;
-  }
+/* Keep native date controls inside their grid cells, including landscape iPads. */
+#customPlanner .planner-grid > label:has(> #plStart),
+#plRows .planner-row-fields > label:has(> input[type="date"]) {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+}
+#customPlanner .planner-grid #plStart,
+#plRows .planner-row-fields input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding-inline: 12px;
+  font-size: 16px;
+  text-align: start;
+  overflow: hidden;
+}
+#customPlanner .planner-grid #plStart:focus-visible,
+#plRows .planner-row-fields input[type="date"]:focus-visible {
+  outline-offset: -3px !important;
+}
+#customPlanner .planner-grid #plStart::-webkit-date-and-time-value,
+#plRows .planner-row-fields input[type="date"]::-webkit-date-and-time-value {
+  min-inline-size: 0;
+  text-align: start;
+}
+#customPlanner .planner-grid #plStart::-webkit-datetime-edit,
+#plRows .planner-row-fields input[type="date"]::-webkit-datetime-edit {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 0;
 }
 </style><style>
 /* Az edzések és hetek hozzáadása önálló, mindig látható blokk. */
@@ -331,9 +328,10 @@ body.planner-new-page #plSaveUnified{display:inline-flex!important}
 #customPlanner .planner-grid>label>select,
 #customPlanner .planner-grid>label>.goal-time-step-field,
 #customPlanner .planner-grid>label>.distance-step-field{width:100%;max-width:100%;min-width:0;box-sizing:border-box;height:52px;min-height:52px;margin-top:0}
-#customPlanner .planner-grid input[type="date"]{min-width:0;max-width:100%;-webkit-appearance:none;appearance:none}
-@media (min-width:601px) and (max-width:1100px){
- #customPlanner .planner-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:601px) and (max-width:1199px), (min-width:601px) and (max-width:1400px) and (pointer:coarse){
+ #customPlanner .planner-grid,
+ #customPlanner #plRows .planner-row-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #customPlanner #plRows .planner-row-fields>label:last-child{grid-column:1/-1}
 }
 @media (max-width:600px){
  #customPlanner .planner-grid{grid-template-columns:minmax(0,1fr)}
@@ -2376,10 +2374,6 @@ body.session-locked .wrap { max-width: 600px; }
   [data-running-theme] .wrap > header { display: flex; flex-direction: column; }
   [data-running-theme] #nextWorkout:not([hidden]) { order: -1; margin: 0 0 14px; }
   [data-running-theme] .theme-training-layout > .dashboard { margin-top: 14px; }
-}
-@media (min-width: 680px) and (max-width: 999px) {
-  [data-running-theme] .planner .planner-grid,
-  [data-running-theme] #plRows .planner-row-fields { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 @media (max-width: 520px) {
   [data-running-theme] .app-page-nav { display: grid; grid-template-columns: minmax(0, 1fr); }
